@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Nota</title>
+</head>
+<body>
+
+<h1>Detalhes da Nota</h1>
+
+<p>
+  <a href="/notas.html">Voltar para lista de notas</a> |
+  <a href="/">Importar nova nota</a>
+</p>
+
+<h3>Usuário ativo:</h3>
+<select id="usuarioAtivo"></select>
+
+<div id="conteudo"></div>
+
+<h2>Dados Administrativos</h2>
+
+<label>CT-e:</label>
+<input id="cte">
+
+<br><br>
+
+<label>Observações:</label><br>
+<textarea id="observacoes" rows="4" cols="60"></textarea>
+
+<br><br>
+
+<button onclick="salvarDadosAdmin()">Salvar dados administrativos</button>
+
+<hr>
+
+<h2>Status da Nota</h2>
+
+<label>Administrativo:</label>
+<select id="statusAdministrativo">
+  <option>Importada</option>
+  <option>Em análise administrativa</option>
+  <option>Liberada para estoque</option>
+  <option>Aguardando Iury</option>
+  <option>Lançamento externo feito</option>
+  <option>Conferência final</option>
+  <option>Finalizada</option>
+</select>
+
+<br><br>
+
+<label>Estoque:</label>
+<select id="statusEstoque">
+  <option>Aguardando liberação</option>
+  <option>Liberada para conferência</option>
+  <option>Em conferência</option>
+  <option>Conferida sem ocorrência</option>
+  <option>Conferida com ocorrência</option>
+</select>
+
+<br><br>
+
+<label>Marcação:</label>
+<select id="statusMarcacao">
+  <option>Não liberada</option>
+  <option>Liberada para marcação</option>
+  <option>Marcada</option>
+</select>
+
+<br><br>
+
+<button onclick="salvarStatus()">Salvar status</button>
+
+<hr>
+
+<h2>Itens da Nota</h2>
+
+<table border="1">
+  <thead>
+    <tr>
+      <th>Código</th>
+      <th>Descrição</th>
+      <th>Quantidade</th>
+      <th>Valor Unitário</th>
+      <th>Valor Total</th>
+    </tr>
+  </thead>
+  <tbody id="tabelaItens"></tbody>
+</table>
+
+<h2>Recados</h2>
+
+<input id="mensagem" placeholder="Digite um recado">
+<button onclick="enviarComentario()">Enviar</button>
+
+<ul id="listaComentarios"></ul>
+
+<script>
+async function carregarNota() {
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get("id");
+
+  await carregarUsuarios();
+
+  const resposta = await fetch(`/nota/${id}`);
+  const nota = await resposta.json();
+
+  document.getElementById("conteudo").innerHTML = `
+    <p><strong>Número:</strong> ${nota.numero}</p>
+    <p><strong>Fornecedor:</strong> ${nota.fornecedor}</p>
+    <p><strong>Data de emissão:</strong> ${nota.data}</p>
+    <p><strong>Frete:</strong> ${nota.valor_frete || "-"}</p>
+    <p><strong>Volumes:</strong> ${nota.volumes || "-"}</p>
+    <p><strong>Transportadora:</strong> ${nota.transportadora || "-"}</p>
+    <p><strong>CNPJ Transportadora:</strong> ${nota.cnpj_transportadora || "-"}</p>
+    <p><strong>Vencimento boleto:</strong> ${nota.vencimento || "-"}</p>
+    <p><strong>Valor boleto:</strong> ${nota.valor_boleto || "-"}</p>
+    <p><strong>Complemento ICMS/ST:</strong> ${nota.complemento_icms || "-"}</p>
+  `;
+
+  document.getElementById("cte").value = nota.cte || "";
+  document.getElementById("observacoes").value = nota.observacoes || "";
+
+  document.getElementById("statusAdministrativo").value =
+    nota.status_administrativo || "Importada";
+
+  document.getElementById("statusEstoque").value =
+    nota.status_estoque || "Aguardando liberação";
+
+  document.getElementById("statusMarcacao").value =
+    nota.status_marcacao || "Não liberada";
+
+  const respostaItens = await fetch(`/nota/${id}/itens`);
+  const itens = await respostaItens.json();
+
+  const tabela = document.getElementById("tabelaItens");
+  tabela.innerHTML = "";
+
+  itens.forEach(item => {
+    tabela.innerHTML += `
+      <tr>
+        <td>${item.codigo}</td>
+        <td>${item.descricao}</td>
+        <td>${item.quantidade}</td>
+        <td>${item.valor_unitario}</td>
+        <td>${item.valor_total}</td>
+      </tr>
+    `;
+  });
+
+  await carregarComentarios(id);
+  aplicarPermissoes();
+}
+
+async function carregarUsuarios() {
+  const resposta = await fetch("/usuarios");
+  const usuarios = await resposta.json();
+
+  const select = document.getElementById("usuarioAtivo");
+  select.innerHTML = "";
+
+  usuarios.forEach(usuario => {
+    const option = document.createElement("option");
+    option.value = usuario.id;
+    option.text = `${usuario.nome} - ${usuario.perfil}`;
+    option.dataset.perfil = usuario.perfil;
+    select.appendChild(option);
+  });
+
+  select.onchange = aplicarPermissoes;
+}
+
+function getPerfilAtual() {
+  const select = document.getElementById("usuarioAtivo");
+  const selectedOption = select.options[select.selectedIndex];
+
+  return selectedOption.dataset.perfil;
+}
+
+function liberarCamposStatus() {
+  document.getElementById("statusAdministrativo").disabled = false;
+  document.getElementById("statusEstoque").disabled = false;
+  document.getElementById("statusMarcacao").disabled = false;
+  document.getElementById("cte").disabled = false;
+  document.getElementById("observacoes").disabled = false;
+}
+
+function aplicarPermissoes() {
+  liberarCamposStatus();
+
+  const perfil = getPerfilAtual();
+
+  if (perfil === "administrativo") {
+    return;
+  }
+
+  document.getElementById("cte").disabled = true;
+  document.getElementById("observacoes").disabled = true;
+
+  if (perfil === "estoque") {
+    document.getElementById("statusAdministrativo").disabled = true;
+    document.getElementById("statusMarcacao").disabled = true;
+    return;
+  }
+
+  document.getElementById("statusAdministrativo").disabled = true;
+  document.getElementById("statusEstoque").disabled = true;
+  document.getElementById("statusMarcacao").disabled = true;
+}
+
+async function carregarComentarios(id) {
+  const resposta = await fetch(`/nota/${id}/comentarios`);
+  const comentarios = await resposta.json();
+
+  const lista = document.getElementById("listaComentarios");
+  lista.innerHTML = "";
+
+  comentarios.forEach(c => {
+    lista.innerHTML += `
+      <li>
+        <strong>${c.nome}:</strong> ${c.mensagem}
+        <small>(${c.data})</small>
+      </li>
+    `;
+  });
+}
+
+async function enviarComentario() {
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get("id");
+
+  const usuarioId = document.getElementById("usuarioAtivo").value;
+  const mensagem = document.getElementById("mensagem").value;
+
+  if (!mensagem.trim()) {
+    alert("Digite um recado antes de enviar.");
+    return;
+  }
+
+  await fetch(`/nota/${id}/comentarios`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body:
+      `usuario_id=${encodeURIComponent(usuarioId)}` +
+      `&mensagem=${encodeURIComponent(mensagem)}`
+  });
+
+  document.getElementById("mensagem").value = "";
+  await carregarComentarios(id);
+}
+
+async function salvarStatus() {
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get("id");
+
+  const statusAdministrativo = document.getElementById("statusAdministrativo").value;
+  const statusEstoque = document.getElementById("statusEstoque").value;
+  const statusMarcacao = document.getElementById("statusMarcacao").value;
+
+  await fetch(`/nota/${id}/status`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body:
+      `status_administrativo=${encodeURIComponent(statusAdministrativo)}` +
+      `&status_estoque=${encodeURIComponent(statusEstoque)}` +
+      `&status_marcacao=${encodeURIComponent(statusMarcacao)}`
+  });
+
+  alert("Status atualizado");
+  await carregarNota();
+}
+
+async function salvarDadosAdmin() {
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get("id");
+
+  const cte = document.getElementById("cte").value;
+  const observacoes = document.getElementById("observacoes").value;
+
+  await fetch(`/nota/${id}/admin`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body:
+      `cte=${encodeURIComponent(cte)}` +
+      `&observacoes=${encodeURIComponent(observacoes)}`
+  });
+
+  alert("Dados administrativos salvos");
+  await carregarNota();
+}
+
+carregarNota();
+</script>
+
+</body>
+</html>

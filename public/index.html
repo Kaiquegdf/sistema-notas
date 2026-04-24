@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Importar XML</title>
+</head>
+<body>
+  <h1>Importar nota XML</h1>
+
+  <form id="formXml">
+    <input type="file" name="xml" accept=".xml" required>
+    <button type="submit">Importar</button>
+  </form>
+  <p>
+  <a href="/notas.html">Ver notas importadas</a>
+</p>
+  <p id="resultado"></p>
+
+  <script>
+    const form = document.getElementById("formXml");
+    const resultado = document.getElementById("resultado");
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const dados = new FormData(form);
+
+      const resposta = await fetch("/importar-xml", {
+        method: "POST",
+        body: dados
+      });
+
+      const texto = await resposta.text();
+      resultado.innerText = texto;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Notas</title>
+</head>
+<body>
+
+<h1>Notas importadas</h1>
+
+<ul id="listaNotas"></ul>
+item.innerHTML = `
+  <a href="/nota.html?id=${nota.id}">
+    Nota ${nota.numero} - ${nota.fornecedor}
+  </a>
+`;
+
+<script>
+async function carregarNotas() {
+  const resposta = await fetch("/notas");
+  const notas = await resposta.json();
+
+  const lista = document.getElementById("listaNotas");
+  lista.innerHTML = "";
+
+  notas.forEach(nota => {
+    const item = document.createElement("li");
+    item.innerHTML = `<a href="nota.html?id=${nota.id}">
+  Nota ${nota.numero} - ${nota.fornecedor}
+</a>`;
+    lista.appendChild(item);
+  });
+}
+
+carregarNotas();
+</script>
+
+</body>
+</html>
