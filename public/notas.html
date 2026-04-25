@@ -1,21 +1,66 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-  <link rel="stylesheet" href="/style.css">
+  <meta charset="UTF-8">
   <title>Notas</title>
+  <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 
-<h1>Notas importadas</h1>
+<header>
+  <h1>Sistema de Notas - Jolupe</h1>
+</header>
 
-<ul id="listaNotas"></ul>
-item.innerHTML = `
-  <a href="/nota.html?id=${nota.id}">
-    Nota ${nota.numero} - ${nota.fornecedor}
-  </a>
-`;
+<main>
+  <div class="card">
+    <h2>Notas importadas</h2>
+
+    <div class="top-links">
+      <a href="/">Importar nova nota</a>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Nota</th>
+          <th>Fornecedor</th>
+          <th>Data</th>
+          <th>Adm.</th>
+          <th>Estoque</th>
+          <th>Marcação</th>
+          <th>Ação</th>
+        </tr>
+      </thead>
+      <tbody id="listaNotas"></tbody>
+    </table>
+  </div>
+</main>
 
 <script>
+function classeStatus(texto) {
+  if (!texto) return "status-alerta";
+
+  const t = texto.toLowerCase();
+
+  if (
+    t.includes("finalizada") ||
+    t.includes("conferida sem ocorrência") ||
+    t.includes("marcada")
+  ) {
+    return "status-ok";
+  }
+
+  if (
+    t.includes("ocorrência") ||
+    t.includes("aguardando") ||
+    t.includes("não liberada")
+  ) {
+    return "status-alerta";
+  }
+
+  return "status-alerta";
+}
+
 async function carregarNotas() {
   const resposta = await fetch("/notas");
   const notas = await resposta.json();
@@ -24,11 +69,31 @@ async function carregarNotas() {
   lista.innerHTML = "";
 
   notas.forEach(nota => {
-    const item = document.createElement("li");
-    item.innerHTML = `<a href="nota.html?id=${nota.id}">
-  Nota ${nota.numero} - ${nota.fornecedor}
-</a>`;
-    lista.appendChild(item);
+    lista.innerHTML += `
+      <tr>
+        <td><strong>${nota.numero}</strong></td>
+        <td>${nota.fornecedor}</td>
+        <td>${nota.data || "-"}</td>
+        <td>
+          <span class="status ${classeStatus(nota.status_administrativo)}">
+            ${nota.status_administrativo || "Importada"}
+          </span>
+        </td>
+        <td>
+          <span class="status ${classeStatus(nota.status_estoque)}">
+            ${nota.status_estoque || "Aguardando liberação"}
+          </span>
+        </td>
+        <td>
+          <span class="status ${classeStatus(nota.status_marcacao)}">
+            ${nota.status_marcacao || "Não liberada"}
+          </span>
+        </td>
+        <td>
+          <a href="/nota.html?id=${nota.id}">Abrir nota</a>
+        </td>
+      </tr>
+    `;
   });
 }
 

@@ -134,3 +134,38 @@ tr:nth-child(even) {
   margin-bottom: 8px;
   border-radius: 6px;
 }
+.danfe {
+  background: white;
+  border: 1px solid #111827;
+  margin-bottom: 20px;
+}
+
+.danfe-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+}
+
+.danfe-box {
+  border: 1px solid #111827;
+  padding: 10px;
+  min-height: 70px;
+}
+
+.danfe-title {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.danfe-small {
+  font-size: 12px;
+  color: #374151;
+}
+
+.danfe-center {
+  text-align: center;
+}
+
+.danfe-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}

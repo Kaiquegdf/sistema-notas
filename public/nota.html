@@ -106,18 +106,77 @@ async function carregarNota() {
   const resposta = await fetch(`/nota/${id}`);
   const nota = await resposta.json();
 
-  document.getElementById("conteudo").innerHTML = `
-    <p><strong>Número:</strong> ${nota.numero}</p>
-    <p><strong>Fornecedor:</strong> ${nota.fornecedor}</p>
-    <p><strong>Data de emissão:</strong> ${nota.data}</p>
-    <p><strong>Frete:</strong> ${nota.valor_frete || "-"}</p>
-    <p><strong>Volumes:</strong> ${nota.volumes || "-"}</p>
-    <p><strong>Transportadora:</strong> ${nota.transportadora || "-"}</p>
-    <p><strong>CNPJ Transportadora:</strong> ${nota.cnpj_transportadora || "-"}</p>
-    <p><strong>Vencimento boleto:</strong> ${nota.vencimento || "-"}</p>
-    <p><strong>Valor boleto:</strong> ${nota.valor_boleto || "-"}</p>
-    <p><strong>Complemento ICMS/ST:</strong> ${nota.complemento_icms || "-"}</p>
-  `;
+ document.getElementById("conteudo").innerHTML = `
+  <div class="danfe">
+    <div class="danfe-grid">
+      <div class="danfe-box">
+        <div class="danfe-title">${nota.fornecedor}</div>
+        <div class="danfe-small">Fornecedor / Emitente</div>
+      </div>
+
+      <div class="danfe-box danfe-center">
+        <strong>DANFE</strong><br>
+        Documento Auxiliar da NF-e<br>
+        <strong>NF-e Nº ${nota.numero}</strong>
+      </div>
+
+      <div class="danfe-box danfe-center">
+        <strong>Nota Fiscal</strong><br>
+        Nº ${nota.numero}<br>
+        Série 1
+      </div>
+    </div>
+
+    <div class="danfe-row">
+      <div class="danfe-box">
+        <strong>Data emissão</strong><br>
+        ${nota.data || "-"}
+      </div>
+
+      <div class="danfe-box">
+        <strong>Valor NF / Boleto</strong><br>
+        R$ ${nota.valor_boleto || "-"}
+      </div>
+
+      <div class="danfe-box">
+        <strong>Frete</strong><br>
+        R$ ${nota.valor_frete || "-"}
+      </div>
+
+      <div class="danfe-box">
+        <strong>Volumes</strong><br>
+        ${nota.volumes || "-"}
+      </div>
+    </div>
+
+    <div class="danfe-row">
+      <div class="danfe-box">
+        <strong>Transportadora</strong><br>
+        ${nota.transportadora || "-"}
+      </div>
+
+      <div class="danfe-box">
+        <strong>CNPJ Transportadora</strong><br>
+        ${nota.cnpj_transportadora || "-"}
+      </div>
+
+      <div class="danfe-box">
+        <strong>Vencimento</strong><br>
+        ${nota.vencimento || "-"}
+      </div>
+
+      <div class="danfe-box">
+        <strong>CT-e</strong><br>
+        ${nota.cte || "-"}
+      </div>
+    </div>
+
+    <div class="danfe-box">
+      <strong>Complemento / Informações adicionais</strong><br>
+      ${nota.complemento_icms || "-"}
+    </div>
+  </div>
+`;
 
   document.getElementById("cte").value = nota.cte || "";
   document.getElementById("observacoes").value = nota.observacoes || "";
