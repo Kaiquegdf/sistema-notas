@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Login</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<header>
+  <h1>Sistema de Notas - Login</h1>
+</header>
+
+<main>
+  <div class="card">
+    <h2>Entrar</h2>
+
+    <input id="nome" placeholder="Nome">
+    <br><br>
+
+    <input id="senha" type="password" placeholder="Senha">
+    <br><br>
+
+    <button onclick="entrar()">Entrar</button>
+
+    <p id="erro"></p>
+  </div>
+</main>
+
+<script>
+async function entrar() {
+  const nome = document.getElementById("nome").value;
+  const senha = document.getElementById("senha").value;
+
+  const resposta = await fetch("/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body:
+      `nome=${encodeURIComponent(nome)}` +
+      `&senha=${encodeURIComponent(senha)}`
+  });
+
+  const texto = await resposta.text();
+
+  try {
+    const usuario = JSON.parse(texto);
+
+    localStorage.setItem("usuario", JSON.stringify(usuario));
+
+    if (usuario.cargo === "admin") {
+      window.location.href = "/admin.html";
+    } else if (usuario.cargo === "administrativo") {
+      window.location.href = "/administrativo.html";
+    } else if (usuario.cargo === "estoque") {
+      window.location.href = "/estoque.html";
+    } else if (usuario.cargo === "vendedor") {
+      window.location.href = "/vendedor.html";
+    }
+  } catch {
+    document.getElementById("erro").innerText = texto;
+  }
+}
+</script>
+
+</body>
+</html>

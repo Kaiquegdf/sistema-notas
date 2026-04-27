@@ -3,6 +3,7 @@ const multer = require("multer");
 const fs = require("fs");
 const xml2js = require("xml2js");
 const sqlite3 = require("sqlite3").verbose();
+const bcrypt = require("bcrypt");
 
 const db = new sqlite3.Database("banco.db");
 
@@ -43,12 +44,15 @@ db.serialize(() => {
   `);
 
   db.run(`
-    CREATE TABLE IF NOT EXISTS usuarios (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      nome TEXT,
-      perfil TEXT
-    )
-  `);
+  CREATE TABLE IF NOT EXISTS usuarios (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT UNIQUE,
+    senha_hash TEXT,
+    cargo TEXT,
+    ativo INTEGER DEFAULT 1,
+    criado_em TEXT
+  )
+`);
 
   db.run(`
     CREATE TABLE IF NOT EXISTS comentarios (
@@ -60,31 +64,25 @@ db.serialize(() => {
     )
   `);
 
-  db.run(`
-    INSERT INTO usuarios (nome, perfil)
-    SELECT 'Kaique', 'administrativo'
-    WHERE NOT EXISTS (SELECT 1 FROM usuarios WHERE nome = 'Kaique')
-  `);
-
-  db.run(`
-    INSERT INTO usuarios (nome, perfil)
-    SELECT 'Alex', 'administrativo'
-    WHERE NOT EXISTS (SELECT 1 FROM usuarios WHERE nome = 'Alex')
-  `);
-
-  db.run(`
-    INSERT INTO usuarios (nome, perfil)
-    SELECT 'Iury', 'administrativo'
-    WHERE NOT EXISTS (SELECT 1 FROM usuarios WHERE nome = 'Iury')
-  `);
-
-  db.run(`
-    INSERT INTO usuarios (nome, perfil)
-    SELECT 'Estoque', 'estoque'
-    WHERE NOT EXISTS (SELECT 1 FROM usuarios WHERE nome = 'Estoque')
-  `);
 });
+async function criarUsuarioPadrao(nome, senha, cargo) {
+  const senhaHash = await bcrypt.hash(senha, 10);
+  const criadoEm = new Date().toISOString();
 
+  db.run(
+    `
+    INSERT INTO usuarios (nome, senha_hash, cargo, ativo, criado_em)
+    SELECT ?, ?, ?, 1, ?
+    WHERE NOT EXISTS (SELECT 1 FROM usuarios WHERE nome = ?)
+    `,
+    [nome, senhaHash, cargo, criadoEm, nome]
+  );
+}
+
+criarUsuarioPadrao("admin", "123", "admin");
+criarUsuarioPadrao("kaique", "123", "administrativo");
+criarUsuarioPadrao("estoque", "123", "estoque");
+criarUsuarioPadrao("vendedor", "123", "vendedor");
 const app = express();
 
 app.use(express.static("public"));
@@ -317,6 +315,36 @@ app.post("/nota/:id/admin", (req, res) => {
       }
 
       res.send("Dados administrativos salvos com sucesso");
+    }
+  );
+});
+app.post("/login", (req, res) => {
+  const nome = req.body.nome;
+  const senha = req.body.senha;
+
+  db.get(
+    "SELECT * FROM usuarios WHERE nome = ? AND ativo = 1",
+    [nome],
+    async (erro, usuario) => {
+      if (erro) {
+        return res.send("Erro no login");
+      }
+
+      if (!usuario) {
+        return res.send("Usuário não encontrado");
+      }
+
+      const senhaCorreta = await bcrypt.compare(senha, usuario.senha_hash);
+
+      if (!senhaCorreta) {
+        return res.send("Senha incorreta");
+      }
+
+      res.json({
+        id: usuario.id,
+        nome: usuario.nome,
+        cargo: usuario.cargo
+      });
     }
   );
 });
