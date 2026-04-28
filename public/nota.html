@@ -14,9 +14,6 @@
   <a href="/">Importar nova nota</a>
 </p>
 
-<h3>Usuário ativo:</h3>
-<select id="usuarioAtivo"></select>
-
 <div id="conteudo"></div>
 
 <h2>Dados Administrativos</h2>
@@ -77,15 +74,17 @@
 <h2>Itens da Nota</h2>
 
 <table border="1">
-  <thead>
-    <tr>
-      <th>Código</th>
-      <th>Descrição</th>
-      <th>Quantidade</th>
-      <th>Valor Unitário</th>
-      <th>Valor Total</th>
-    </tr>
-  </thead>
+<thead>
+  <tr>
+    <th>Código</th>
+    <th>Descrição</th>
+    <th>Qtd</th>
+    <th>Custo Unitário</th>
+    <th>Markup %</th>
+    <th>Preço Sugerido</th>
+    <th>Total</th>
+  </tr>
+</thead>
   <tbody id="tabelaItens"></tbody>
 </table>
 
@@ -97,11 +96,42 @@
 <ul id="listaComentarios"></ul>
 
 <script>
+
+function formatarData(data) {
+  if (!data) return "-";
+
+  const d = new Date(data);
+
+  if (isNaN(d)) return data;
+
+  return d.toLocaleDateString("pt-BR");
+}
+
+function formatarMoeda(valor) {
+  const numero = Number(valor);
+
+  if (isNaN(numero)) return "-";
+
+  return numero.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL"
+  });
+}
+
+function formatarQuantidade(valor) {
+  const numero = Number(valor);
+
+  if (isNaN(numero)) return valor || "-";
+
+  return numero.toLocaleString("pt-BR", {
+    maximumFractionDigits: 0
+  });
+}
 async function carregarNota() {
   const params = new URLSearchParams(window.location.search);
   const id = params.get("id");
 
-  await carregarUsuarios();
+  
 
   const resposta = await fetch(`/nota/${id}`);
   const nota = await resposta.json();
@@ -130,17 +160,17 @@ async function carregarNota() {
     <div class="danfe-row">
       <div class="danfe-box">
         <strong>Data emissão</strong><br>
-        ${nota.data || "-"}
+       ${formatarData(nota.data)}
       </div>
 
       <div class="danfe-box">
         <strong>Valor NF / Boleto</strong><br>
-        R$ ${nota.valor_boleto || "-"}
+       ${formatarMoeda(nota.valor_boleto)}
       </div>
 
       <div class="danfe-box">
         <strong>Frete</strong><br>
-        R$ ${nota.valor_frete || "-"}
+        ${formatarMoeda(nota.valor_frete)}
       </div>
 
       <div class="danfe-box">
@@ -197,19 +227,48 @@ async function carregarNota() {
   tabela.innerHTML = "";
 
   itens.forEach(item => {
-    tabela.innerHTML += `
-      <tr>
-        <td>${item.codigo}</td>
-        <td>${item.descricao}</td>
-        <td>${item.quantidade}</td>
-        <td>${item.valor_unitario}</td>
-        <td>${item.valor_total}</td>
-      </tr>
-    `;
-  });
+  const custo = Number(item.valor_unitario || 0);
+  const markupPadrao = 1.896;
+  const precoSugerido = custo * markupPadrao;
+
+  tabela.innerHTML += `
+    <tr>
+      <td>${item.codigo || "-"}</td>
+      <td>${item.descricao || "-"}</td>
+      <td>${formatarQuantidade(item.quantidade)}</td>
+      <td>${formatarMoeda(custo)}</td>
+
+      <td>
+        <input 
+          type="number"
+          step="0.001"
+          value="${markupPadrao}"
+          class="input-markup"
+          onchange="atualizarPreco(this, ${custo})"
+        >
+      </td>
+
+      <td class="preco-sugerido">
+        ${formatarMoeda(precoSugerido)}
+      </td>
+
+      <td>${formatarMoeda(item.valor_total)}</td>
+    </tr>
+  `;
+});
 
   await carregarComentarios(id);
   aplicarPermissoes();
+}
+
+function atualizarPreco(input, custo) {
+  const markup = Number(input.value);
+  const preco = custo * markup;
+
+  const linha = input.closest("tr");
+
+  linha.querySelector(".preco-sugerido").innerText =
+    formatarMoeda(preco);
 }
 
 async function carregarUsuarios() {
@@ -253,7 +312,7 @@ function liberarCamposStatus() {
 }
 
 function aplicarPermissoes() {
-  liberarCamposStatus();
+
 
   const perfil = getPerfilAtual();
 
