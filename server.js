@@ -14,6 +14,13 @@ db.serialize(() => {
       numero TEXT,
       fornecedor TEXT,
       data TEXT
+      cte TEXT,
+      complemento_manual TEXT,
+      prioridade TEXT,
+      responsavel_atual TEXT,
+      pendencia_admin TEXT,
+      acao_necessaria TEXT,
+      tipo_ocorrencia TEXT
     )
   `);
 
@@ -30,6 +37,7 @@ db.serialize(() => {
   db.run(`ALTER TABLE notas ADD COLUMN complemento_icms TEXT`, () => {});
   db.run(`ALTER TABLE notas ADD COLUMN cte TEXT`, () => {});
   db.run(`ALTER TABLE notas ADD COLUMN observacoes TEXT`, () => {});
+  db.run("ALTER TABLE notas ADD COLUMN markup_nota TEXT", () => {});
 
   db.run(`
     CREATE TABLE IF NOT EXISTS itens_nota (
@@ -302,21 +310,42 @@ app.post("/nota/:id/status", (req, res) => {
 });
 
 app.post("/nota/:id/admin", (req, res) => {
-  const id = req.params.id;
-  const cte = req.body.cte;
-  const observacoes = req.body.observacoes;
+    const id = req.params.id
 
-  db.run(
-    "UPDATE notas SET cte = ?, observacoes = ? WHERE id = ?",
-    [cte, observacoes, id],
-    (erro) => {
-      if (erro) {
-        return res.send("Erro ao salvar dados administrativos");
-      }
+    const {
+        complemento_manual,
+        prioridade,
+        responsavel_atual,
+        pendencia_admin,
+        acao_necessaria,
+        tipo_ocorrencia
+    } = req.body
 
-      res.send("Dados administrativos salvos com sucesso");
+db.run(`
+    UPDATE notas
+    SET
+        complemento_manual = ?,
+        prioridade = ?,
+        responsavel_atual = ?,
+        pendencia_admin = ?,
+        acao_necessaria = ?,
+        tipo_ocorrencia = ?
+    WHERE id = ?
+`, [
+    complemento_manual,
+    prioridade,
+    responsavel_atual,
+    pendencia_admin,
+    acao_necessaria,
+    tipo_ocorrencia,
+    id
+], (err) => {
+    if (err) {
+        return res.status(500).send("Erro ao salvar")
     }
-  );
+
+    res.send("Salvo com sucesso")
+})
 });
 app.post("/login", (req, res) => {
   const nome = req.body.nome;
@@ -380,7 +409,112 @@ app.get("/notas-estoque", (req, res) => {
     res.json(notas);
   });
 });
+app.delete("/nota/:id", (req, res) => {
+  const id = req.params.id;
 
+  db.serialize(() => {
+    db.run("DELETE FROM comentarios WHERE nota_id = ?", [id]);
+    db.run("DELETE FROM itens_nota WHERE nota_id = ?", [id]);
+    db.run("DELETE FROM notas WHERE id = ?", [id], (erro) => {
+      if (erro) {
+        return res.send("Erro ao excluir nota");
+      }
+
+      res.send("Nota excluída com sucesso");
+    });
+  });
+});
+app.post("/nota/:id/markup", (req, res) => {
+  const id = req.params.id;
+  const markup = String(req.body.markup).replace(",", ".");
+
+  if (isNaN(Number(markup))) {
+    return res.status(400).send("Markup inválido");
+  }
+
+  db.serialize(() => {
+    db.run(
+      "UPDATE notas SET markup_nota = ? WHERE id = ?",
+      [markup, id]
+    );
+
+    db.run(
+      `
+      UPDATE itens_nota
+      SET preco_sugerido = valor_unitario * ?
+      WHERE nota_id = ?
+      `,
+      [Number(markup), id],
+      (erro) => {
+        if (erro) {
+          console.log(erro);
+          return res.status(500).send("Erro ao aplicar markup");
+        }
+
+        res.send("Markup aplicado");
+      }
+    );
+  });
+});
+app.delete("/comentario/:id", (req, res) => {
+  const id = req.params.id;
+
+  db.run("DELETE FROM comentarios WHERE id = ?", [id], function (erro) {
+    if (erro) {
+      return res.status(500).send("Erro ao excluir comentário");
+    }
+
+    res.send("Comentário excluído com sucesso");
+  });
+});
+app.post("/nota/:id/avancar-etapa", (req, res) => {
+  const id = req.params.id;
+
+  db.get("SELECT * FROM notas WHERE id = ?", [id], (erro, nota) => {
+    if (erro || !nota) {
+      return res.status(404).send("Nota não encontrada");
+    }
+
+    let statusAdministrativo = nota.status_administrativo;
+    let statusEstoque = nota.status_estoque;
+    let statusMarcacao = nota.status_marcacao;
+
+    if (statusAdministrativo === "Importada") {
+      statusAdministrativo = "Em análise administrativa";
+    } else if (statusAdministrativo === "Em análise administrativa") {
+      statusAdministrativo = "Liberada para estoque";
+      statusEstoque = "Liberada para conferência";
+    } else if (statusEstoque === "Liberada para conferência") {
+      statusEstoque = "Em conferência";
+    } else if (statusEstoque === "Em conferência") {
+      statusEstoque = "Conferida sem ocorrência";
+      statusMarcacao = "Liberada para marcação";
+    } else if (statusMarcacao === "Liberada para marcação") {
+      statusMarcacao = "Marcada";
+      statusAdministrativo = "Finalizada";
+    } else {
+      return res.send("A nota já está finalizada ou não possui próxima etapa.");
+    }
+
+    db.run(
+      `
+      UPDATE notas
+      SET status_administrativo = ?,
+          status_estoque = ?,
+          status_marcacao = ?
+      WHERE id = ?
+      `,
+      [statusAdministrativo, statusEstoque, statusMarcacao, id],
+      (erro) => {
+        if (erro) {
+          return res.status(500).send("Erro ao avançar etapa");
+        }
+
+        res.send("Etapa avançada com sucesso");
+      }
+    );
+  });
+});
 app.listen(3000, () => {
   console.log("Servidor rodando na porta 3000");
 });

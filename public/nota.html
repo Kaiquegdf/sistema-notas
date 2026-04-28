@@ -1,101 +1,177 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <link rel="stylesheet" href="/style.css">
   <meta charset="UTF-8">
   <title>Nota</title>
+  <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 
-<h1>Detalhes da Nota</h1>
+<header>
+  <h1>Detalhes da Nota</h1>
+</header>
 
-<p>
-  <a href="/notas.html">Voltar para lista de notas</a> |
-  <a href="/">Importar nova nota</a>
-</p>
+<main>
 
-<div id="conteudo"></div>
+  <p class="top-links">
+    <a href="/notas.html">Voltar para lista de notas</a> |
+    <a href="/index.html">Importar nova nota</a>
+  </p>
 
-<h2>Dados Administrativos</h2>
+  <div id="conteudo"></div>
 
-<label>CT-e:</label>
-<input id="cte">
+  <div class="card">
+    <h2>Dados Administrativos</h2>
 
-<br><br>
+    <div class="grid">
+      
 
-<label>Observações:</label><br>
-<textarea id="observacoes" rows="4" cols="60"></textarea>
+      <div>
+        <label>Prioridade</label><br>
+        <select id="prioridade">
+          <option value="">Normal</option>
+          <option value="Alta">Alta</option>
+          <option value="Urgente">Urgente</option>
+        </select>
+      </div>
 
-<br><br>
+      <div>
+        <label>Responsável atual</label><br>
+        <input id="responsavel_atual" placeholder="Ex: Alex, Iury, Kaique">
+      </div>
 
-<button onclick="salvarDadosAdmin()">Salvar dados administrativos</button>
+      <div>
+        <label>Tipo de ocorrência</label><br>
+        <select id="tipo_ocorrencia">
+          <option value="">Sem ocorrência</option>
+          <option>Preço</option>
+          <option>Devolução</option>
+          <option>Falta de peça</option>
+          <option>Pedido divergente</option>
+          <option>Boleto/Frete</option>
+        </select>
+      </div>
 
-<hr>
+      <div>
+        <label>Pendência administrativa</label><br>
+        <input id="pendencia_admin" placeholder="Ex: confirmar preço com Iury">
+      </div>
 
-<h2>Status da Nota</h2>
+      <div>
+        <label>Ação necessária</label><br>
+        <input id="acao_necessaria" placeholder="Ex: lançar devolução / aguardar boleto">
+      </div>
 
-<label>Administrativo:</label>
-<select id="statusAdministrativo">
-  <option>Importada</option>
-  <option>Em análise administrativa</option>
-  <option>Liberada para estoque</option>
-  <option>Aguardando Iury</option>
-  <option>Lançamento externo feito</option>
-  <option>Conferência final</option>
-  <option>Finalizada</option>
-</select>
+      <div>
+        <label>Complemento ICMS/ST manual</label><br>
+        <input id="complemento_manual" placeholder="Ex: valor ST informado manualmente">
+      </div>
+      
+    </div>
 
-<br><br>
+    <br>
 
-<label>Estoque:</label>
-<select id="statusEstoque">
-  <option>Aguardando liberação</option>
-  <option>Liberada para conferência</option>
-  <option>Em conferência</option>
-  <option>Conferida sem ocorrência</option>
-  <option>Conferida com ocorrência</option>
-</select>
+    <button onclick="salvarDadosAdmin()">Salvar dados administrativos</button>
+  </div>
 
-<br><br>
+  <div class="card">
+    <h2>Status da Nota</h2>
 
-<label>Marcação:</label>
-<select id="statusMarcacao">
-  <option>Não liberada</option>
-  <option>Liberada para marcação</option>
-  <option>Marcada</option>
-</select>
+    <div class="grid">
+      <div>
+        <label>Administrativo</label><br>
+        <select id="statusAdministrativo">
+          <option>Importada</option>
+          <option>Em análise administrativa</option>
+          <option>Liberada para estoque</option>
+          <option>Aguardando Iury</option>
+          <option>Lançamento externo feito</option>
+          <option>Conferência final</option>
+          <option>Finalizada</option>
+        </select>
+      </div>
 
-<br><br>
+      <div>
+        <label>Estoque</label><br>
+        <select id="statusEstoque">
+          <option>Aguardando liberação</option>
+          <option>Liberada para conferência</option>
+          <option>Em conferência</option>
+          <option>Conferida sem ocorrência</option>
+          <option>Conferida com ocorrência</option>
+        </select>
+      </div>
 
-<button onclick="salvarStatus()">Salvar status</button>
+      <div>
+        <label>Marcação</label><br>
+        <select id="statusMarcacao">
+          <option>Não liberada</option>
+          <option>Liberada para marcação</option>
+          <option>Marcada</option>
+        </select>
+      </div>
+    </div>
 
-<hr>
+    <br>
 
-<h2>Itens da Nota</h2>
+    <button onclick="salvarStatus()">Salvar status</button>
+    <button onclick="avancarEtapa()">Próxima etapa</button>
+  </div>
 
-<table border="1">
-<thead>
-  <tr>
-    <th>Código</th>
-    <th>Descrição</th>
-    <th>Qtd</th>
-    <th>Custo Unitário</th>
-    <th>Markup %</th>
-    <th>Preço Sugerido</th>
-    <th>Total</th>
-  </tr>
-</thead>
-  <tbody id="tabelaItens"></tbody>
-</table>
+  <div class="card">
+    <h2>Precificação</h2>
 
-<h2>Recados</h2>
+    <label>Markup da nota</label><br>
+    <input type="number" id="markup_nota" step="0.001" placeholder="Ex: 1.896">
 
-<input id="mensagem" placeholder="Digite um recado">
-<button onclick="enviarComentario()">Enviar</button>
+    <button onclick="aplicarMarkupNota()">Aplicar markup em todos os itens</button>
+  </div>
+  
+  <div class="card" id="resumoAdminCard" style="display:none;">
+  <h2>Resumo Administrativo</h2>
+  <div id="resumoAdmin" class="grid"></div>
+  </div>
 
-<ul id="listaComentarios"></ul>
+  <div class="card">
+    <h2>Itens da Nota</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Descrição</th>
+          <th>Qtd</th>
+          <th>Custo Unitário</th>
+          <th>Preço Sugerido</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody id="tabelaItens"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Ocorrências / Recados</h2>
+
+    <textarea id="mensagem" placeholder="Digite um recado ou ocorrência..."></textarea>
+    <br><br>
+
+    <button onclick="enviarComentario()">Enviar recado</button>
+
+    <br><br>
+
+    <div id="listaComentarios"></div>
+  </div>
+
+</main>
 
 <script>
+const params = new URLSearchParams(window.location.search);
+const notaId = params.get("id");
+
+function getUsuarioLogado() {
+  return JSON.parse(localStorage.getItem("usuario"));
+}
 
 function formatarData(data) {
   if (!data) return "-";
@@ -105,6 +181,16 @@ function formatarData(data) {
   if (isNaN(d)) return data;
 
   return d.toLocaleDateString("pt-BR");
+}
+
+function formatarDataHora(data) {
+  if (!data) return "-";
+
+  const d = new Date(data);
+
+  if (isNaN(d)) return data;
+
+  return d.toLocaleString("pt-BR");
 }
 
 function formatarMoeda(valor) {
@@ -127,89 +213,88 @@ function formatarQuantidade(valor) {
     maximumFractionDigits: 0
   });
 }
+
 async function carregarNota() {
-  const params = new URLSearchParams(window.location.search);
-  const id = params.get("id");
-
-  
-
-  const resposta = await fetch(`/nota/${id}`);
+  const resposta = await fetch(`/nota/${notaId}`);
   const nota = await resposta.json();
 
- document.getElementById("conteudo").innerHTML = `
-  <div class="danfe">
-    <div class="danfe-grid">
-      <div class="danfe-box">
-        <div class="danfe-title">${nota.fornecedor}</div>
-        <div class="danfe-small">Fornecedor / Emitente</div>
+  document.getElementById("conteudo").innerHTML = `
+    <div class="danfe">
+      <div class="danfe-grid">
+        <div class="danfe-box">
+          <div class="danfe-title">${nota.fornecedor || "-"}</div>
+          <div class="danfe-small">Fornecedor / Emitente</div>
+        </div>
+
+        <div class="danfe-box danfe-center">
+          <strong>DANFE</strong><br>
+          Documento Auxiliar da NF-e<br>
+          <strong>NF-e Nº ${nota.numero || "-"}</strong>
+        </div>
+
+        <div class="danfe-box danfe-center">
+          <strong>Nota Fiscal</strong><br>
+          Nº ${nota.numero || "-"}<br>
+          Série 1
+        </div>
       </div>
 
-      <div class="danfe-box danfe-center">
-        <strong>DANFE</strong><br>
-        Documento Auxiliar da NF-e<br>
-        <strong>NF-e Nº ${nota.numero}</strong>
+      <div class="danfe-row">
+        <div class="danfe-box">
+          <strong>Data emissão</strong><br>
+          ${formatarData(nota.data)}
+        </div>
+
+        <div class="danfe-box">
+          <strong>Valor NF / Boleto</strong><br>
+          ${formatarMoeda(nota.valor_boleto)}
+        </div>
+
+        <div class="danfe-box">
+          <strong>Frete</strong><br>
+          ${formatarMoeda(nota.valor_frete)}
+        </div>
+
+        <div class="danfe-box">
+          <strong>Volumes</strong><br>
+          ${nota.volumes || "-"}
+        </div>
       </div>
 
-      <div class="danfe-box danfe-center">
-        <strong>Nota Fiscal</strong><br>
-        Nº ${nota.numero}<br>
-        Série 1
+      <div class="danfe-row">
+        <div class="danfe-box">
+          <strong>Transportadora</strong><br>
+          ${nota.transportadora || "-"}
+        </div>
+
+        <div class="danfe-box">
+          <strong>CNPJ Transportadora</strong><br>
+          ${nota.cnpj_transportadora || "-"}
+        </div>
+
+        <div class="danfe-box">
+          <strong>Vencimento</strong><br>
+          ${formatarData(nota.vencimento)}
+        </div>
+
+        <div class="danfe-box">
+          <strong>CT-e</strong><br>
+          ${nota.cte || "-"}
+        </div>
       </div>
+
+
     </div>
+  `;
 
-    <div class="danfe-row">
-      <div class="danfe-box">
-        <strong>Data emissão</strong><br>
-       ${formatarData(nota.data)}
-      </div>
 
-      <div class="danfe-box">
-        <strong>Valor NF / Boleto</strong><br>
-       ${formatarMoeda(nota.valor_boleto)}
-      </div>
-
-      <div class="danfe-box">
-        <strong>Frete</strong><br>
-        ${formatarMoeda(nota.valor_frete)}
-      </div>
-
-      <div class="danfe-box">
-        <strong>Volumes</strong><br>
-        ${nota.volumes || "-"}
-      </div>
-    </div>
-
-    <div class="danfe-row">
-      <div class="danfe-box">
-        <strong>Transportadora</strong><br>
-        ${nota.transportadora || "-"}
-      </div>
-
-      <div class="danfe-box">
-        <strong>CNPJ Transportadora</strong><br>
-        ${nota.cnpj_transportadora || "-"}
-      </div>
-
-      <div class="danfe-box">
-        <strong>Vencimento</strong><br>
-        ${nota.vencimento || "-"}
-      </div>
-
-      <div class="danfe-box">
-        <strong>CT-e</strong><br>
-        ${nota.cte || "-"}
-      </div>
-    </div>
-
-    <div class="danfe-box">
-      <strong>Complemento / Informações adicionais</strong><br>
-      ${nota.complemento_icms || "-"}
-    </div>
-  </div>
-`;
-
-  document.getElementById("cte").value = nota.cte || "";
-  document.getElementById("observacoes").value = nota.observacoes || "";
+  document.getElementById("complemento_manual").value = nota.complemento_manual || "";
+  document.getElementById("prioridade").value = nota.prioridade || "";
+  document.getElementById("responsavel_atual").value = nota.responsavel_atual || "";
+  document.getElementById("pendencia_admin").value = nota.pendencia_admin || "";
+  document.getElementById("acao_necessaria").value = nota.acao_necessaria || "";
+  document.getElementById("tipo_ocorrencia").value = nota.tipo_ocorrencia || "";
+  document.getElementById("markup_nota").value = nota.markup_nota || "1.896";
 
   document.getElementById("statusAdministrativo").value =
     nota.status_administrativo || "Importada";
@@ -220,172 +305,133 @@ async function carregarNota() {
   document.getElementById("statusMarcacao").value =
     nota.status_marcacao || "Não liberada";
 
-  const respostaItens = await fetch(`/nota/${id}/itens`);
+  const respostaItens = await fetch(`/nota/${notaId}/itens`);
   const itens = await respostaItens.json();
 
   const tabela = document.getElementById("tabelaItens");
   tabela.innerHTML = "";
 
+  const markupNota = Number(String(nota.markup_nota || "1.896").replace(",", "."));
+
   itens.forEach(item => {
-  const custo = Number(item.valor_unitario || 0);
-  const markupPadrao = 1.896;
-  const precoSugerido = custo * markupPadrao;
+    const custo = Number(item.valor_unitario || 0);
+    const precoSugerido = custo * markupNota;
 
-  tabela.innerHTML += `
-    <tr>
-      <td>${item.codigo || "-"}</td>
-      <td>${item.descricao || "-"}</td>
-      <td>${formatarQuantidade(item.quantidade)}</td>
-      <td>${formatarMoeda(custo)}</td>
+    tabela.innerHTML += `
+      <tr>
+        <td>${item.codigo || "-"}</td>
+        <td>${item.descricao || "-"}</td>
+        <td>${formatarQuantidade(item.quantidade)}</td>
+        <td>${formatarMoeda(custo)}</td>
+        <td>${formatarMoeda(precoSugerido)}</td>
+        <td>${formatarMoeda(item.valor_total)}</td>
+      </tr>
+    `;
+  });
+const resumoAdmin = document.getElementById("resumoAdmin");
+const resumoAdminCard = document.getElementById("resumoAdminCard");
 
-      <td>
-        <input 
-          type="number"
-          step="0.001"
-          value="${markupPadrao}"
-          class="input-markup"
-          onchange="atualizarPreco(this, ${custo})"
-        >
-      </td>
+const camposResumo = [
+  { titulo: "Prioridade", valor: nota.prioridade },
+  { titulo: "Responsável atual", valor: nota.responsavel_atual },
+  { titulo: "Tipo de ocorrência", valor: nota.tipo_ocorrencia },
+  { titulo: "Pendência administrativa", valor: nota.pendencia_admin },
+  { titulo: "Ação necessária", valor: nota.acao_necessaria },
+  { titulo: "Complemento manual", valor: nota.complemento_manual }
+];
 
-      <td class="preco-sugerido">
-        ${formatarMoeda(precoSugerido)}
-      </td>
+const camposPreenchidos = camposResumo.filter(c => c.valor && c.valor.trim() !== "");
 
-      <td>${formatarMoeda(item.valor_total)}</td>
-    </tr>
-  `;
-});
+if (camposPreenchidos.length === 0) {
+  resumoAdminCard.style.display = "none";
+} else {
+  resumoAdminCard.style.display = "block";
 
-  await carregarComentarios(id);
+  resumoAdmin.innerHTML = camposPreenchidos.map(c => `
+    <div class="info-resumo">
+      <span>${c.titulo}</span>
+      <strong>${c.valor}</strong>
+    </div>
+  `).join("");
+}
+  await carregarComentarios();
   aplicarPermissoes();
 }
 
-function atualizarPreco(input, custo) {
-  const markup = Number(input.value);
-  const preco = custo * markup;
-
-  const linha = input.closest("tr");
-
-  linha.querySelector(".preco-sugerido").innerText =
-    formatarMoeda(preco);
-}
-
-async function carregarUsuarios() {
-  const resposta = await fetch("/usuarios");
-  const usuarios = await resposta.json();
-
-  const select = document.getElementById("usuarioAtivo");
-  select.innerHTML = "";
-
-  const usuarioSalvo = JSON.parse(localStorage.getItem("usuario"));
-
-  usuarios.forEach(usuario => {
-    const option = document.createElement("option");
-    option.value = usuario.id;
-    option.text = `${usuario.nome} - ${usuario.cargo}`;
-    option.dataset.perfil = usuario.cargo;
-
-    if (usuarioSalvo && usuario.id === usuarioSalvo.id) {
-      option.selected = true;
-    }
-
-    select.appendChild(option);
-  });
-
-  select.onchange = aplicarPermissoes;
-}
-
-function getPerfilAtual() {
-  const select = document.getElementById("usuarioAtivo");
-  const selectedOption = select.options[select.selectedIndex];
-
-  return selectedOption.dataset.perfil;
-}
-
-function liberarCamposStatus() {
-  document.getElementById("statusAdministrativo").disabled = false;
-  document.getElementById("statusEstoque").disabled = false;
-  document.getElementById("statusMarcacao").disabled = false;
-  document.getElementById("cte").disabled = false;
-  document.getElementById("observacoes").disabled = false;
-}
-
 function aplicarPermissoes() {
+  const usuario = getUsuarioLogado();
 
-
-  const perfil = getPerfilAtual();
-
-  if (perfil === "administrativo") {
+  if (!usuario) {
+    window.location.href = "/login.html";
     return;
   }
 
-  document.getElementById("cte").disabled = true;
-  document.getElementById("observacoes").disabled = true;
+  const cargo = usuario.cargo;
 
-  if (perfil === "estoque") {
-    document.getElementById("statusAdministrativo").disabled = true;
+  if (cargo === "admin" || cargo === "administrativo") {
+    return;
+  }
+
+  const camposAdmin = [
+    "cte",
+    "complemento_manual",
+    "prioridade",
+    "responsavel_atual",
+    "pendencia_admin",
+    "acao_necessaria",
+    "tipo_ocorrencia",
+    "statusAdministrativo",
+    "markup_nota"
+  ];
+
+  camposAdmin.forEach(id => {
+    const campo = document.getElementById(id);
+    if (campo) campo.disabled = true;
+  });
+
+  if (cargo === "estoque") {
     document.getElementById("statusMarcacao").disabled = true;
     return;
   }
 
-  document.getElementById("statusAdministrativo").disabled = true;
-  document.getElementById("statusEstoque").disabled = true;
-  document.getElementById("statusMarcacao").disabled = true;
-}
-
-async function carregarComentarios(id) {
-  const resposta = await fetch(`/nota/${id}/comentarios`);
-  const comentarios = await resposta.json();
-
-  const lista = document.getElementById("listaComentarios");
-  lista.innerHTML = "";
-
-  comentarios.forEach(c => {
-    lista.innerHTML += `
-      <li>
-        <strong>${c.nome}:</strong> ${c.mensagem}
-        <small>(${c.data})</small>
-      </li>
-    `;
-  });
-}
-
-async function enviarComentario() {
-  const params = new URLSearchParams(window.location.search);
-  const id = params.get("id");
-
-  const usuarioId = document.getElementById("usuarioAtivo").value;
-  const mensagem = document.getElementById("mensagem").value;
-
-  if (!mensagem.trim()) {
-    alert("Digite um recado antes de enviar.");
-    return;
+  if (cargo === "vendedor") {
+    document.getElementById("statusEstoque").disabled = true;
+    document.getElementById("statusMarcacao").disabled = true;
   }
+}
 
-  await fetch(`/nota/${id}/comentarios`, {
+async function salvarDadosAdmin() {
+  const complementoManual = document.getElementById("complemento_manual").value;
+  const prioridade = document.getElementById("prioridade").value;
+  const responsavelAtual = document.getElementById("responsavel_atual").value;
+  const pendenciaAdmin = document.getElementById("pendencia_admin").value;
+  const acaoNecessaria = document.getElementById("acao_necessaria").value;
+  const tipoOcorrencia = document.getElementById("tipo_ocorrencia").value;
+
+  await fetch(`/nota/${notaId}/admin`, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded"
     },
     body:
-      `usuario_id=${encodeURIComponent(usuarioId)}` +
-      `&mensagem=${encodeURIComponent(mensagem)}`
+      `&complemento_manual=${encodeURIComponent(complementoManual)}` +
+      `&prioridade=${encodeURIComponent(prioridade)}` +
+      `&responsavel_atual=${encodeURIComponent(responsavelAtual)}` +
+      `&pendencia_admin=${encodeURIComponent(pendenciaAdmin)}` +
+      `&acao_necessaria=${encodeURIComponent(acaoNecessaria)}` +
+      `&tipo_ocorrencia=${encodeURIComponent(tipoOcorrencia)}`
   });
 
-  document.getElementById("mensagem").value = "";
-  await carregarComentarios(id);
+  alert("Dados administrativos salvos");
+  await carregarNota();
 }
 
 async function salvarStatus() {
-  const params = new URLSearchParams(window.location.search);
-  const id = params.get("id");
-
   const statusAdministrativo = document.getElementById("statusAdministrativo").value;
   const statusEstoque = document.getElementById("statusEstoque").value;
   const statusMarcacao = document.getElementById("statusMarcacao").value;
 
-  await fetch(`/nota/${id}/status`, {
+  await fetch(`/nota/${notaId}/status`, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded"
@@ -400,27 +446,105 @@ async function salvarStatus() {
   await carregarNota();
 }
 
-async function salvarDadosAdmin() {
-  const params = new URLSearchParams(window.location.search);
-  const id = params.get("id");
+async function aplicarMarkupNota() {
+  const markup = document.getElementById("markup_nota").value;
 
-  const cte = document.getElementById("cte").value;
-  const observacoes = document.getElementById("observacoes").value;
+  await fetch(`/nota/${notaId}/markup`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body: `markup=${encodeURIComponent(markup)}`
+  });
 
-  await fetch(`/nota/${id}/admin`, {
+  alert("Markup atualizado");
+  await carregarNota();
+}
+
+async function carregarComentarios() {
+  const resposta = await fetch(`/nota/${notaId}/comentarios`);
+  const comentarios = await resposta.json();
+
+  const lista = document.getElementById("listaComentarios");
+  lista.innerHTML = "";
+
+  if (comentarios.length === 0) {
+    lista.innerHTML = `<p>Nenhum recado registrado.</p>`;
+    return;
+  }
+
+ comentarios.forEach(c => {
+  lista.innerHTML += `
+    <div class="recado">
+      <div class="recado-topo">
+        <strong>${c.nome || "Usuário"}</strong>
+        <button class="btn-excluir" onclick="excluirComentario(${c.id})">
+          Excluir
+        </button>
+      </div>
+
+      <p>${c.mensagem || ""}</p>
+      <small>${formatarDataHora(c.data)}</small>
+    </div>
+  `;
+});
+}
+
+async function enviarComentario() {
+  const usuario = getUsuarioLogado();
+  const mensagem = document.getElementById("mensagem").value;
+
+  if (!usuario) {
+    alert("Faça login novamente.");
+    window.location.href = "/login.html";
+    return;
+  }
+
+  if (!mensagem.trim()) {
+    alert("Digite um recado antes de enviar.");
+    return;
+  }
+
+  await fetch(`/nota/${notaId}/comentarios`, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded"
     },
     body:
-      `cte=${encodeURIComponent(cte)}` +
-      `&observacoes=${encodeURIComponent(observacoes)}`
+      `usuario_id=${encodeURIComponent(usuario.id)}` +
+      `&mensagem=${encodeURIComponent(mensagem)}`
   });
 
-  alert("Dados administrativos salvos");
-  await carregarNota();
+  document.getElementById("mensagem").value = "";
+  await carregarComentarios();
 }
 
+async function excluirComentario(id) {
+  const confirmar = confirm("Deseja excluir este comentário?");
+
+  if (!confirmar) {
+    return;
+  }
+
+  await fetch(`/comentario/${id}`, {
+    method: "DELETE"
+  });
+
+  await carregarComentarios();
+}
+
+async function avancarEtapa() {
+  const confirmar = confirm("Deseja avançar para a próxima etapa?");
+
+  if (!confirmar) return;
+
+  await fetch(`/nota/${notaId}/avancar-etapa`, {
+    method: "POST"
+  });
+
+  alert("Nota avançada com sucesso!");
+  await carregarNota();
+}
 carregarNota();
 </script>
 

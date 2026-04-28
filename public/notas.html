@@ -35,8 +35,16 @@
     </table>
   </div>
 </main>
-
 <script>
+function formatarData(data) {
+  if (!data) return "-";
+
+  const d = new Date(data);
+  if (isNaN(d)) return data;
+
+  return d.toLocaleDateString("pt-BR");
+}
+
 function classeStatus(texto) {
   if (!texto) return "status-alerta";
 
@@ -68,33 +76,64 @@ async function carregarNotas() {
   const lista = document.getElementById("listaNotas");
   lista.innerHTML = "";
 
+  const usuario = JSON.parse(localStorage.getItem("usuario"));
+
+  const podeExcluir =
+    usuario &&
+    (
+      usuario.cargo === "admin" ||
+      usuario.cargo === "administrativo"
+    );
+
   notas.forEach(nota => {
     lista.innerHTML += `
       <tr>
         <td><strong>${nota.numero}</strong></td>
         <td>${nota.fornecedor}</td>
-        <td>${nota.data || "-"}</td>
+        <td>${formatarData(nota.data)}</td>
+
         <td>
           <span class="status ${classeStatus(nota.status_administrativo)}">
             ${nota.status_administrativo || "Importada"}
           </span>
         </td>
+
         <td>
           <span class="status ${classeStatus(nota.status_estoque)}">
             ${nota.status_estoque || "Aguardando liberação"}
           </span>
         </td>
+
         <td>
           <span class="status ${classeStatus(nota.status_marcacao)}">
             ${nota.status_marcacao || "Não liberada"}
           </span>
         </td>
+
         <td>
           <a href="/nota.html?id=${nota.id}">Abrir nota</a>
+
+          ${
+            podeExcluir
+              ? `<button onclick="excluirNota(${nota.id})">Excluir</button>`
+              : ""
+          }
         </td>
       </tr>
     `;
   });
+}
+
+async function excluirNota(id) {
+  const confirmar = confirm("Tem certeza que deseja excluir esta nota?");
+
+  if (!confirmar) return;
+
+  await fetch(`/nota/${id}`, {
+    method: "DELETE"
+  });
+
+  await carregarNotas();
 }
 
 carregarNotas();
