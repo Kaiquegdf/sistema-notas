@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Painel Estoque</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<header>
+  <h1>Painel do Estoque</h1>
+</header>
+
+<main>
+  <div class="card">
+    <h2>Notas liberadas para conferência</h2>
+
+    <p>
+      <a href="/login.html">Sair</a>
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Nota</th>
+          <th>Fornecedor</th>
+          <th>Data</th>
+          <th>Status Estoque</th>
+          <th>Marcação</th>
+          <th>Ação</th>
+        </tr>
+      </thead>
+      <tbody id="listaEstoque"></tbody>
+    </table>
+  </div>
+</main>
+
+<script>
+async function carregarNotasEstoque() {
+  const resposta = await fetch("/notas-estoque");
+  const notas = await resposta.json();
+
+  const lista = document.getElementById("listaEstoque");
+  lista.innerHTML = "";
+
+  if (notas.length === 0) {
+    lista.innerHTML = `
+      <tr>
+        <td colspan="6">Nenhuma nota liberada para o estoque.</td>
+      </tr>
+    `;
+    return;
+  }
+
+  notas.forEach(nota => {
+    lista.innerHTML += `
+      <tr>
+        <td><strong>${nota.numero}</strong></td>
+        <td>${nota.fornecedor}</td>
+        <td>${nota.data || "-"}</td>
+        <td>${nota.status_estoque || "Aguardando liberação"}</td>
+        <td>${nota.status_marcacao || "Não liberada"}</td>
+        <td>
+          <a href="/nota.html?id=${nota.id}">Abrir nota</a>
+        </td>
+      </tr>
+    `;
+  });
+}
+
+carregarNotasEstoque();
+</script>
+
+</body>
+</html>

@@ -219,11 +219,18 @@ async function carregarUsuarios() {
   const select = document.getElementById("usuarioAtivo");
   select.innerHTML = "";
 
+  const usuarioSalvo = JSON.parse(localStorage.getItem("usuario"));
+
   usuarios.forEach(usuario => {
     const option = document.createElement("option");
     option.value = usuario.id;
-    option.text = `${usuario.nome} - ${usuario.perfil}`;
-    option.dataset.perfil = usuario.perfil;
+    option.text = `${usuario.nome} - ${usuario.cargo}`;
+    option.dataset.perfil = usuario.cargo;
+
+    if (usuarioSalvo && usuario.id === usuarioSalvo.id) {
+      option.selected = true;
+    }
+
     select.appendChild(option);
   });
 

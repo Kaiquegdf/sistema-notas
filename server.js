@@ -348,6 +348,38 @@ app.post("/login", (req, res) => {
     }
   );
 });
+app.get("/notas-estoque", (req, res) => {
+  db.all(`
+    SELECT *,
+    CASE
+      WHEN LOWER(fornecedor) LIKE '%luporini%' THEN 1
+      WHEN LOWER(fornecedor) LIKE '%real%' THEN 2
+      WHEN LOWER(fornecedor) LIKE '%vespor%' THEN 3
+      WHEN LOWER(fornecedor) LIKE '%pecas brasil%' THEN 4
+      WHEN LOWER(fornecedor) LIKE '%peças brasil%' THEN 4
+      WHEN LOWER(fornecedor) LIKE '%comdip%' THEN 5
+      WHEN LOWER(fornecedor) LIKE '%ptd%' THEN 6
+      WHEN LOWER(fornecedor) LIKE '%antonio%' THEN 7
+      WHEN LOWER(fornecedor) LIKE '%embrepar%' THEN 8
+      WHEN LOWER(fornecedor) LIKE '%lwm%' THEN 9
+      ELSE 999
+    END as prioridade
+
+    FROM notas
+    WHERE status_estoque = 'Liberada para conferência'
+       OR status_estoque = 'Em conferência'
+
+    ORDER BY prioridade ASC, fornecedor ASC
+  `,
+  (erro, notas) => {
+    if (erro) {
+      console.log(erro);
+      return res.status(500).send("Erro ao buscar notas");
+    }
+
+    res.json(notas);
+  });
+});
 
 app.listen(3000, () => {
   console.log("Servidor rodando na porta 3000");
