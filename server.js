@@ -882,7 +882,7 @@ app.post("/solicitacoes-peca", (req, res) => {
         SELECT COALESCE(SUM(quantidade_solicitada), 0) AS total_solicitado
         FROM solicitacoes_peca
         WHERE item_id = ?
-          AND status NOT IN ('Cancelada', 'Entregue')
+        AND status NOT IN ('Cancelada')
         `,
         [item.id],
         (erro, saldo) => {
