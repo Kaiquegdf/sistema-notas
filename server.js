@@ -1069,20 +1069,27 @@ app.post("/solicitacoes-peca/:id/respostas", (req, res) => {
     }
   );
 });
-app.get("/debug/solicitacoes", (req, res) => {
+app.get("/nota/:id/ocorrencias", (req, res) => {
+  const notaId = req.params.id;
+
   db.all(
     `
-    SELECT *
-    FROM solicitacoes_peca
-    ORDER BY id DESC
+    SELECT 
+      ocorrencias.*,
+      usuarios.nome AS criado_por_nome
+    FROM ocorrencias
+    LEFT JOIN usuarios ON usuarios.id = ocorrencias.criado_por
+    WHERE ocorrencias.nota_id = ?
+    ORDER BY ocorrencias.id DESC
     `,
-    (erro, linhas) => {
+    [notaId],
+    (erro, ocorrencias) => {
       if (erro) {
         console.log(erro);
-        return res.status(500).send("Erro no debug");
+        return res.status(500).send("Erro ao buscar ocorrências");
       }
 
-      res.json(linhas);
+      res.json(ocorrencias);
     }
   );
 });

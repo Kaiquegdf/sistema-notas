@@ -607,11 +607,19 @@ async function salvarCodigosLoja() {
 }
 
 async function carregarSolicitacoesNota() {
+  const lista = document.getElementById("listaSolicitacoesNota");
+
+  if (!lista) {
+    alert("ERRO: div listaSolicitacoesNota não encontrada");
+    return;
+  }
+
+  lista.innerHTML = "<p>Carregando peças solicitadas...</p>";
+
   const resposta = await fetch(`/nota/${notaId}/solicitacoes-finalizadas`);
   const solicitacoes = await resposta.json();
 
-  const lista = document.getElementById("listaSolicitacoesNota");
-  lista.innerHTML = "";
+  console.log("SOLICITAÇÕES DA NOTA:", solicitacoes);
 
   if (solicitacoes.length === 0) {
     lista.innerHTML = "<p>Nenhuma peça solicitada desta nota.</p>";
@@ -620,12 +628,9 @@ async function carregarSolicitacoesNota() {
 
   lista.innerHTML = solicitacoes.map(s => `
     <div class="ocorrencia-card">
-      <div class="ocorrencia-topo">
-        <div>
-          <span class="ocorrencia-tipo">${s.status}</span>
-          <h3>${s.codigo_loja} - ${s.descricao || "-"}</h3>
-        </div>
-      </div>
+      <span class="ocorrencia-tipo">${s.status}</span>
+
+      <h3>${s.codigo_loja} - ${s.descricao || "-"}</h3>
 
       <div class="mensagem-vinculada">
         <strong>Vendedor:</strong> ${s.vendedor_nome || "-"}<br>
