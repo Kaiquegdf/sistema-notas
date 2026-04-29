@@ -25,9 +25,7 @@
           <th>Nota</th>
           <th>Fornecedor</th>
           <th>Data</th>
-          <th>Adm.</th>
-          <th>Estoque</th>
-          <th>Marcação</th>
+          <th>Status</th>>
           <th>Ação</th>
         </tr>
       </thead>
@@ -93,23 +91,10 @@ async function carregarNotas() {
         <td>${formatarData(nota.data)}</td>
 
         <td>
-          <span class="status ${classeStatus(nota.status_administrativo)}">
-            ${nota.status_administrativo || "Importada"}
-          </span>
+        <span class="status ${classeStatus(nota.status)}">
+        ${nota.status || "Importada"}
+        </span>
         </td>
-
-        <td>
-          <span class="status ${classeStatus(nota.status_estoque)}">
-            ${nota.status_estoque || "Aguardando liberação"}
-          </span>
-        </td>
-
-        <td>
-          <span class="status ${classeStatus(nota.status_marcacao)}">
-            ${nota.status_marcacao || "Não liberada"}
-          </span>
-        </td>
-
         <td>
           <a href="/nota.html?id=${nota.id}">Abrir nota</a>
 

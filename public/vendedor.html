@@ -2,25 +2,160 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Administrativo</title>
+  <title>Painel Vendedor</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 
 <header>
-  <h1>Painel Administrativo</h1>
+  <h1>Painel Vendedor</h1>
 </header>
 
 <main>
-  <div class="card">
-<h1>Painel Vendedor</h1>
-<h2>Bem-vindo ao painel vendedor</h2>
-
-    <a href="/notas.html">Ver notas</a> |
-    <a href="/index.html">Importar XML</a> |
+  <p class="top-links">
     <a href="/login.html">Sair</a>
+  </p>
+
+  <div class="card">
+    <h2>Solicitar peça ao estoque</h2>
+
+    <div class="grid">
+      <div>
+        <label>Código interno da loja</label><br>
+        <input id="codigo_loja" placeholder="Ex: 12345">
+      </div>
+
+      <div>
+        <label>Quantidade</label><br>
+        <input id="quantidade" type="number" min="1" value="1">
+      </div>
+    </div>
+
+    <br>
+
+    <label>Mensagem</label><br>
+    <textarea id="mensagem" placeholder="Ex: Cliente aguardando no balcão..."></textarea>
+
+    <br><br>
+
+    <button onclick="criarSolicitacao()">Solicitar peça</button>
+  </div>
+
+  <div class="card">
+    <h2>Minhas solicitações</h2>
+    <div id="listaSolicitacoes"></div>
   </div>
 </main>
+
+<script>
+function getUsuarioLogado() {
+  return JSON.parse(localStorage.getItem("usuario"));
+}
+
+function formatarDataHora(data) {
+  if (!data) return "-";
+
+  const d = new Date(data);
+
+  if (isNaN(d)) return data;
+
+  return d.toLocaleString("pt-BR");
+}
+
+async function criarSolicitacao() {
+  const usuario = getUsuarioLogado();
+
+  if (!usuario) {
+    window.location.href = "/login.html";
+    return;
+  }
+
+  const codigoLoja = document.getElementById("codigo_loja").value.trim();
+  const quantidade = document.getElementById("quantidade").value;
+  const mensagem = document.getElementById("mensagem").value.trim();
+
+  if (!codigoLoja) {
+    alert("Informe o código interno da loja.");
+    return;
+  }
+
+  const resposta = await fetch("/solicitacoes-peca", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body:
+      `vendedor_id=${encodeURIComponent(usuario.id)}` +
+      `&codigo_loja=${encodeURIComponent(codigoLoja)}` +
+      `&quantidade=${encodeURIComponent(quantidade)}` +
+      `&mensagem=${encodeURIComponent(mensagem)}`
+  });
+
+  const texto = await resposta.text();
+
+  alert(texto);
+
+  document.getElementById("codigo_loja").value = "";
+  document.getElementById("quantidade").value = 1;
+  document.getElementById("mensagem").value = "";
+
+  await carregarMinhasSolicitacoes();
+}
+
+async function carregarMinhasSolicitacoes() {
+  const usuario = getUsuarioLogado();
+
+  if (!usuario) {
+    window.location.href = "/login.html";
+    return;
+  }
+
+  console.log("USUARIO LOGADO:", usuario);
+
+  const resposta = await fetch(`/vendedor/${usuario.id}/solicitacoes-peca`);
+  const solicitacoes = await resposta.json();
+
+  console.log("SOLICITAÇÕES:", solicitacoes);
+
+  const lista = document.getElementById("listaSolicitacoes");
+  lista.innerHTML = "";
+
+  if (!solicitacoes.length) {
+    lista.innerHTML = "<p>Nenhuma solicitação criada.</p>";
+    return;
+  }
+
+  for (const s of solicitacoes) {
+    const respostasReq = await fetch(`/solicitacoes-peca/${s.id}/respostas`);
+    const respostas = await respostasReq.json();
+
+    const respostasHtml = respostas.map(r => `
+      <div class="resposta-ocorrencia">
+        <strong>${r.usuario_nome}</strong>
+        <p>${r.mensagem}</p>
+        <small>${formatarDataHora(r.criado_em)}</small>
+      </div>
+    `).join("");
+
+    lista.innerHTML += `
+      <div class="ocorrencia-card">
+        <span class="ocorrencia-tipo">${s.status}</span>
+
+        <h3>${s.codigo_loja} - ${s.descricao}</h3>
+
+        <p>
+          <strong>Quantidade:</strong> ${s.quantidade_solicitada}<br>
+          <strong>Nota:</strong> ${s.numero_nota || "-"}<br>
+          <strong>Mensagem:</strong> ${s.mensagem || "-"}
+        </p>
+
+        ${respostasHtml}
+      </div>
+    `;
+  }
+}
+carregarMinhasSolicitacoes();
+</script>
 
 </body>
 </html>

@@ -12,12 +12,17 @@
 </header>
 
 <main>
+  <p class="top-links">
+    <a href="/login.html">Sair</a>
+  </p>
+
+  <div class="card">
+    <h2>Solicitações dos vendedores</h2>
+    <div id="listaSolicitacoes"></div>
+  </div>
+
   <div class="card">
     <h2>Notas liberadas para conferência</h2>
-
-    <p>
-      <a href="/login.html">Sair</a>
-    </p>
 
     <table>
       <thead>
@@ -25,8 +30,7 @@
           <th>Nota</th>
           <th>Fornecedor</th>
           <th>Data</th>
-          <th>Status Estoque</th>
-          <th>Marcação</th>
+          <th>Status</th>
           <th>Ação</th>
         </tr>
       </thead>
@@ -36,6 +40,30 @@
 </main>
 
 <script>
+function getUsuarioLogado() {
+  return JSON.parse(localStorage.getItem("usuario"));
+}
+
+function formatarData(data) {
+  if (!data) return "-";
+
+  const d = new Date(data);
+
+  if (isNaN(d)) return data;
+
+  return d.toLocaleDateString("pt-BR");
+}
+
+function formatarDataHora(data) {
+  if (!data) return "-";
+
+  const d = new Date(data);
+
+  if (isNaN(d)) return data;
+
+  return d.toLocaleString("pt-BR");
+}
+
 async function carregarNotasEstoque() {
   const resposta = await fetch("/notas-estoque");
   const notas = await resposta.json();
@@ -46,7 +74,7 @@ async function carregarNotasEstoque() {
   if (notas.length === 0) {
     lista.innerHTML = `
       <tr>
-        <td colspan="6">Nenhuma nota liberada para o estoque.</td>
+        <td colspan="5">Nenhuma nota liberada para o estoque.</td>
       </tr>
     `;
     return;
@@ -57,9 +85,8 @@ async function carregarNotasEstoque() {
       <tr>
         <td><strong>${nota.numero}</strong></td>
         <td>${nota.fornecedor}</td>
-        <td>${nota.data || "-"}</td>
-        <td>${nota.status_estoque || "Aguardando liberação"}</td>
-        <td>${nota.status_marcacao || "Não liberada"}</td>
+        <td>${formatarData(nota.data)}</td>
+        <td>${nota.status || "Importada"}</td>
         <td>
           <a href="/nota.html?id=${nota.id}">Abrir nota</a>
         </td>
@@ -68,6 +95,114 @@ async function carregarNotasEstoque() {
   });
 }
 
+async function carregarSolicitacoes() {
+  const resposta = await fetch("/solicitacoes-peca");
+  const solicitacoes = await resposta.json();
+
+  const lista = document.getElementById("listaSolicitacoes");
+  lista.innerHTML = "";
+
+  if (solicitacoes.length === 0) {
+    lista.innerHTML = "<p>Nenhuma solicitação de vendedor.</p>";
+    return;
+  }
+
+  for (const s of solicitacoes) {
+    const respostasReq = await fetch(`/solicitacoes-peca/${s.id}/respostas`);
+    const respostas = await respostasReq.json();
+
+    const respostasHtml = respostas.map(r => `
+      <div class="resposta-ocorrencia">
+        <strong>${r.usuario_nome || "Usuário"}</strong>
+        <p>${r.mensagem}</p>
+        <small>${formatarDataHora(r.criado_em)}</small>
+      </div>
+    `).join("");
+
+    lista.innerHTML += `
+      <div class="ocorrencia-card">
+        <div class="ocorrencia-topo">
+          <div>
+            <span class="ocorrencia-tipo">${s.status}</span>
+            <h3>${s.codigo_loja} - ${s.descricao || "Peça não encontrada"}</h3>
+          </div>
+
+          <select onchange="alterarStatusSolicitacao(${s.id}, this.value)">
+            <option ${s.status === "Aberta" ? "selected" : ""}>Aberta</option>
+            <option ${s.status === "Encontrada em nota" ? "selected" : ""}>Encontrada em nota</option>
+            <option ${s.status === "Sem saldo disponível" ? "selected" : ""}>Sem saldo disponível</option>
+            <option ${s.status === "Não encontrada" ? "selected" : ""}>Não encontrada</option>
+            <option ${s.status === "Separada" ? "selected" : ""}>Separada</option>
+            <option ${s.status === "Entregue" ? "selected" : ""}>Entregue</option>
+            <option ${s.status === "Cancelada" ? "selected" : ""}>Cancelada</option>
+          </select>
+        </div>
+
+        <div class="mensagem-vinculada">
+          <strong>Vendedor:</strong> ${s.vendedor_nome || "-"}<br>
+          <strong>Quantidade:</strong> ${s.quantidade_solicitada}<br>
+          <strong>Nota:</strong> ${s.numero_nota || "Não vinculada"} - ${s.fornecedor_nota || ""}<br>
+          <strong>Mensagem do vendedor:</strong>
+          <p>${s.mensagem || "-"}</p>
+          <small>${formatarDataHora(s.criado_em)}</small>
+        </div>
+
+        <div class="respostas">
+          ${respostasHtml}
+        </div>
+
+        <div class="responder-box">
+          <textarea id="resposta_solicitacao_${s.id}" placeholder="Responder ao vendedor..."></textarea>
+          <button onclick="responderSolicitacao(${s.id})">Responder</button>
+        </div>
+      </div>
+    `;
+  }
+}
+
+async function responderSolicitacao(id) {
+  const usuario = getUsuarioLogado();
+  const campo = document.getElementById(`resposta_solicitacao_${id}`);
+  const mensagem = campo.value;
+
+  if (!usuario) {
+    alert("Faça login novamente.");
+    window.location.href = "/login.html";
+    return;
+  }
+
+  if (!mensagem.trim()) {
+    alert("Digite uma resposta.");
+    return;
+  }
+
+  await fetch(`/solicitacoes-peca/${id}/respostas`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body:
+      `usuario_id=${encodeURIComponent(usuario.id)}` +
+      `&mensagem=${encodeURIComponent(mensagem)}`
+  });
+
+  campo.value = "";
+  await carregarSolicitacoes();
+}
+
+async function alterarStatusSolicitacao(id, status) {
+  await fetch(`/solicitacoes-peca/${id}/status`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body: `status=${encodeURIComponent(status)}`
+  });
+
+  await carregarSolicitacoes();
+}
+
+carregarSolicitacoes();
 carregarNotasEstoque();
 </script>
 
