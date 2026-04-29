@@ -7,9 +7,19 @@
 </head>
 <body>
 
-<header>
-  <h1>Painel Vendedor</h1>
+<header class="top-header">
+    <h1>Painel vendedor</h1>
+
+    <img 
+        src="/img/logo-jolupe.jpeg"
+        alt="Logo Jolupe"
+        class="logo-jolupe"
+    >
 </header>
+
+<h2>Minhas solicitações</h2>
+<button onclick="carregarMinhasSolicitacoes()">Abertas</button>
+<button onclick="carregarSolicitacoesAntigas()">Antigas</button>
 
 <main>
   <p class="top-links">
@@ -153,6 +163,20 @@ async function carregarMinhasSolicitacoes() {
       </div>
     `;
   }
+}
+
+async function carregarSolicitacoesAntigas() {
+  const usuario = getUsuarioLogado();
+
+  if (!usuario) {
+    window.location.href = "/login.html";
+    return;
+  }
+
+  const resposta = await fetch(`/vendedor/${usuario.id}/solicitacoes-antigas`);
+  const solicitacoes = await resposta.json();
+
+  renderizarSolicitacoes(solicitacoes);
 }
 carregarMinhasSolicitacoes();
 </script>

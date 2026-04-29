@@ -332,23 +332,55 @@ tr:hover {
   margin-bottom: 8px;
 }
 .top-header {
-  background: #132d52;
-  color: white;
-  padding: 20px 30px;
-  
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.top-header h1 {
-  margin: 0;
-  color: #28e03d;
-  font-size: 20px;
+    background: #0b0b5a;
+    padding: 20px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .logo-jolupe {
-  height: 45px;
-  width: auto;
-  object-fit: contain;
+    height: 60px;
+    width: auto;
+    object-fit: contain;
+}
+
+.top-header h1 {
+    color: #32e032;
+    margin: 0;
+}
+.notificacao-tela {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  z-index: 99999;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notificacao-card {
+  background: white;
+  padding: 35px;
+  border-radius: 18px;
+  width: 420px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+  border-top: 8px solid #20d63b;
+}
+
+.notificacao-card h2 {
+  margin-top: 0;
+  color: #111;
+}
+
+.notificacao-card button {
+  margin-top: 20px;
+  padding: 14px 22px;
+  border-radius: 10px;
+  border: none;
+  background: #20d63b;
+  font-weight: bold;
+  cursor: pointer;
 }

@@ -848,34 +848,7 @@ app.post("/solicitacoes-peca", (req, res) => {
       }
 
       if (!item) {
-        db.run(
-          `
-          INSERT INTO solicitacoes_peca (
-            vendedor_id,
-            nota_id,
-            item_id,
-            codigo_loja,
-            descricao,
-            quantidade_solicitada,
-            status,
-            mensagem,
-            criado_em
-          )
-          VALUES (?, NULL, NULL, ?, '', ?, 'Não encontrada', ?, ?)
-          `,
-          [vendedorId, codigoLoja, quantidadeSolicitada, mensagem, criadoEm],
-          (erro) => {
-            if (erro) {
-              console.log(erro);
-              return res.status(500).send("Erro ao criar solicitação");
-            }
-
-            res.send("Solicitação criada: peça não encontrada em nenhuma nota");
-          }
-        );
-
-        return;
-      }
+      return res.status(404).send("Peça não encontrada em nenhuma nota.");}
 
       db.get(
         `
@@ -895,7 +868,7 @@ app.post("/solicitacoes-peca", (req, res) => {
           const jaSolicitado = Number(saldo.total_solicitado || 0);
           const disponivel = quantidadeNota - jaSolicitado;
 
-          let status = "Encontrada em nota";
+          let status = "Aberta";
 
           if (disponivel <= 0 || quantidadeSolicitada > disponivel) {
           return res.status(400).send(`Sem saldo disponível. Quantidade da nota: ${quantidadeNota}, já solicitado: ${jaSolicitado}, disponível: ${disponivel}.`);}
@@ -1001,6 +974,7 @@ app.get("/vendedor/:id/solicitacoes-peca", (req, res) => {
     LEFT JOIN usuarios ON usuarios.id = solicitacoes_peca.vendedor_id
     LEFT JOIN notas ON notas.id = solicitacoes_peca.nota_id
     WHERE solicitacoes_peca.vendedor_id = ?
+    AND solicitacoes_peca.status NOT IN ('Entregue', 'Cancelada')
     ORDER BY solicitacoes_peca.id DESC
     `,
     [vendedorId],
@@ -1090,6 +1064,34 @@ app.get("/nota/:id/ocorrencias", (req, res) => {
       }
 
       res.json(ocorrencias);
+    }
+  );
+});
+app.get("/vendedor/:id/solicitacoes-antigas", (req, res) => {
+  const vendedorId = req.params.id;
+
+  db.all(
+    `
+    SELECT
+      solicitacoes_peca.*,
+      usuarios.nome AS vendedor_nome,
+      notas.numero AS numero_nota,
+      notas.fornecedor AS fornecedor_nota
+    FROM solicitacoes_peca
+    LEFT JOIN usuarios ON usuarios.id = solicitacoes_peca.vendedor_id
+    LEFT JOIN notas ON notas.id = solicitacoes_peca.nota_id
+    WHERE solicitacoes_peca.vendedor_id = ?
+      AND solicitacoes_peca.status IN ('Entregue', 'Cancelada')
+    ORDER BY solicitacoes_peca.id DESC
+    `,
+    [vendedorId],
+    (erro, solicitacoes) => {
+      if (erro) {
+        console.log(erro);
+        return res.status(500).send("Erro ao buscar solicitações antigas");
+      }
+
+      res.json(solicitacoes);
     }
   );
 });

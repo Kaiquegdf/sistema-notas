@@ -7,14 +7,24 @@
 </head>
 <body>
 
-<header class="top-header">
-  <h1>Painel Estoque</h1>
+  <audio id="somAlerta" src="/sounds/alerta.mp3" preload="auto"></audio>
 
-  <img 
-    <img src="/img/logo-jolupe.jpeg" alt="Logo Jolupe" class="logo-jolupe"> 
-    alt="Logo Jolupe"
-    class="logo-jolupe"
-  >
+<div id="notificacaoTela" class="notificacao-tela" style="display: none;">
+  <div class="notificacao-card">
+    <h2>Nova solicitação recebida</h2>
+    <p id="notificacaoTexto">O vendedor fez uma nova solicitação.</p>
+    <button onclick="fecharNotificacao()">Ver solicitações</button>
+  </div>
+</div>
+
+<header class="top-header">
+    <h1>Painel Estoque</h1>
+
+    <img 
+        src="/img/logo-jolupe.jpeg"
+        alt="Logo Jolupe"
+        class="logo-jolupe"
+    >
 </header>
 
 <main>
@@ -134,15 +144,11 @@ async function carregarSolicitacoes() {
           </div>
 
           <select onchange="alterarStatusSolicitacao(${s.id}, this.value)">
-            <option ${s.status === "Aberta" ? "selected" : ""}>Aberta</option>
-            <option ${s.status === "Encontrada em nota" ? "selected" : ""}>Encontrada em nota</option>
-            <option ${s.status === "Sem saldo disponível" ? "selected" : ""}>Sem saldo disponível</option>
-            <option ${s.status === "Não encontrada" ? "selected" : ""}>Não encontrada</option>
-            <option ${s.status === "Separada" ? "selected" : ""}>Separada</option>
-            <option ${s.status === "Entregue" ? "selected" : ""}>Entregue</option>
-            <option ${s.status === "Cancelada" ? "selected" : ""}>Cancelada</option>
+          <option value="Aberta" ${s.status === "Aberta" ? "selected" : ""}>Aberta</option>
+          <option value="Entregue" ${s.status === "Entregue" ? "selected" : ""}>Entregue</option>
+          <option value="Não encontrada" ${s.status === "Não encontrada" ? "selected" : ""}>Não encontrada</option>
           </select>
-        </div>
+          </div>
 
         <div class="mensagem-vinculada">
           <strong>Vendedor:</strong> ${s.vendedor_nome || "-"}<br>
@@ -208,8 +214,64 @@ async function alterarStatusSolicitacao(id, status) {
   await carregarSolicitacoes();
 }
 
-carregarSolicitacoes();
-carregarNotasEstoque();
+let idsSolicitacoesConhecidas = [];
+
+function tocarSomAlerta() {
+  const som = document.getElementById("somAlerta");
+
+  if (som) {
+    som.currentTime = 0;
+    som.play().catch(() => {
+      console.log("Som bloqueado pelo navegador até haver interação na página.");
+    });
+  }
+}
+
+function mostrarNotificacao(texto) {
+  document.getElementById("notificacaoTexto").innerText = texto;
+  document.getElementById("notificacaoTela").style.display = "flex";
+  tocarSomAlerta();
+}
+
+function fecharNotificacao() {
+  document.getElementById("notificacaoTela").style.display = "none";
+}
+
+async function verificarNovasSolicitacoes() {
+  const resposta = await fetch("/solicitacoes-peca");
+  const solicitacoes = await resposta.json();
+
+  const idsAtuais = solicitacoes.map(s => s.id);
+
+  if (idsSolicitacoesConhecidas.length === 0) {
+    idsSolicitacoesConhecidas = idsAtuais;
+    return;
+  }
+
+  const novas = solicitacoes.filter(s => !idsSolicitacoesConhecidas.includes(s.id));
+
+  if (novas.length > 0) {
+    const nova = novas[0];
+
+    mostrarNotificacao(
+      `Nova solicitação: ${nova.codigo_loja} - ${nova.descricao || "Peça"}`
+    );
+
+    await carregarSolicitacoes();
+  }
+
+  idsSolicitacoesConhecidas = idsAtuais;
+}
+
+async function iniciarPainelEstoque() {
+  await carregarSolicitacoes();
+  await carregarNotasEstoque();
+  await verificarNovasSolicitacoes();
+
+  setInterval(verificarNovasSolicitacoes, 5000);
+}
+
+iniciarPainelEstoque();
 </script>
 
 </body>
