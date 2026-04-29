@@ -331,3 +331,24 @@ tr:hover {
   min-height: 60px;
   margin-bottom: 8px;
 }
+.top-header {
+  background: #132d52;
+  color: white;
+  padding: 20px 30px;
+  
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.top-header h1 {
+  margin: 0;
+  color: #28e03d;
+  font-size: 20px;
+}
+
+.logo-jolupe {
+  height: 45px;
+  width: auto;
+  object-fit: contain;
+}
