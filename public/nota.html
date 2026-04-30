@@ -112,12 +112,14 @@
       <thead>
         <tr>
         <th>Cód. XML</th>
+        <th>Cód. Peça</th>
+        <th>Marca</th>
         <th>Cód. Loja</th>
         <th>Descrição</th>
-          <th>Qtd</th>
-          <th>Custo Unitário</th>
-          <th>Preço Sugerido</th>
-          <th>Total</th>
+        <th>Qtd</th>
+        <th>Custo Unitário</th>
+        <th>Preço Sugerido</th>
+        <th>Total</th>
         </tr>
       </thead>
       <tbody id="tabelaItens"></tbody>
@@ -449,13 +451,15 @@ async function carregarItens(nota) {
 
     tabela.innerHTML += `
       <tr>
-        <td>${item.codigo || "-"}</td>
-        <td>${item.codigo_loja || "-"}</td>
-        <td>${item.descricao || "-"}</td>
-        <td>${formatarQuantidade(item.quantidade)}</td>
-        <td>${formatarMoeda(custo)}</td>
-        <td>${formatarMoeda(precoSugerido)}</td>
-        <td>${formatarMoeda(item.valor_total)}</td>
+      <td>${item.codigo || "-"}</td>
+      <td>${item.codigo_peca || "-"}</td>
+      <td>${item.marca_peca || "-"}</td>
+      <td>${item.codigo_loja || "-"}</td>
+      <td>${item.descricao || "-"}</td>
+      <td>${formatarQuantidade(item.quantidade)}</td>
+      <td>${formatarMoeda(item.valor_unitario)}</td>
+      <td>${formatarMoeda(item.preco_sugerido)}</td>
+      <td>${formatarMoeda(item.valor_total)}</td>
       </tr>
     `;
   });
@@ -643,6 +647,9 @@ async function carregarSolicitacoesNota() {
         <strong>Quantidade:</strong> ${s.quantidade_solicitada}<br>
         <strong>Nota:</strong> ${s.numero_nota || "-"} - ${s.fornecedor_nota || ""}<br>
         <strong>Mensagem:</strong>
+        <strong>Status:</strong> ${s.status}<br>
+        <strong>Conferido:</strong> ${s.conferido || "-"}<br>
+        <strong>Finalizado por:</strong> ${s.finalizado_por || "-"}<br>
         <p>${s.mensagem || "-"}</p>
         <small>${formatarDataHora(s.criado_em)}</small>
       </div>

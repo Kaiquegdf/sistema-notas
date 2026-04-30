@@ -44,6 +44,13 @@ db.serialize(() => {
   db.run(`ALTER TABLE notas ADD COLUMN cte TEXT`, () => {});
   db.run(`ALTER TABLE notas ADD COLUMN observacao_admin TEXT`, () => {});
   db.run(`ALTER TABLE itens_nota ADD COLUMN codigo_loja TEXT`, () => {});
+  db.run(`ALTER TABLE itens_nota ADD COLUMN codigo_peca TEXT`, () => {});
+  db.run(`ALTER TABLE itens_nota ADD COLUMN marca_peca TEXT`, () => {});
+  db.run(`ALTER TABLE itens_nota ADD COLUMN info_adicional TEXT`, () => {});
+  db.run(`ALTER TABLE solicitacoes_peca ADD COLUMN conferido TEXT`, () => {});
+  db.run(`ALTER TABLE solicitacoes_peca ADD COLUMN finalizado_por TEXT`, () => {});
+  db.run(`ALTER TABLE solicitacoes_peca ADD COLUMN finalizado_em TEXT`, () => {});
+  
   db.run(`
     CREATE TABLE IF NOT EXISTS itens_nota (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -231,35 +238,52 @@ app.post("/importar-xml", upload.single("xml"), (req, res) => {
             const produto = item.prod[0];
 
             const codigo = produto.cProd?.[0] || "";
+            const infoAdicional = item.infAdProd?.[0] || "";
+
+            let codigoPeca = "";
+            let marcaPeca = "";
+
+            if (infoAdicional) {
+            const partesInfo = infoAdicional.split("|").map(p => p.trim());
+
+            codigoPeca = partesInfo[0] || "";
+            marcaPeca = partesInfo[1] || "";
+            } 
             const descricao = produto.xProd?.[0] || "";
             const quantidade = produto.qCom?.[0] || "";
             const valorUnitario = produto.vUnCom?.[0] || "";
             const valorTotal = produto.vProd?.[0] || "";
             const precoSugerido = Number(valorUnitario || 0) * 1.896;
 
-            db.run(
-              `
-              INSERT INTO itens_nota (
-                nota_id,
-                codigo,
-                descricao,
-                quantidade,
-                valor_unitario,
-                valor_total,
-                preco_sugerido
-              )
-              VALUES (?, ?, ?, ?, ?, ?, ?)
-              `,
-              [
-                notaId,
-                codigo,
-                descricao,
-                quantidade,
-                valorUnitario,
-                valorTotal,
-                precoSugerido
-              ]
-            );
+          db.run(
+          `
+            INSERT INTO itens_nota (
+              nota_id,
+              codigo,
+              descricao,
+              quantidade,
+              valor_unitario,
+              valor_total,
+              preco_sugerido,
+              codigo_peca,
+              marca_peca,
+              info_adicional
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `,
+            [
+              notaId,
+              codigo,
+              descricao,
+              quantidade,
+              valorUnitario,
+              valorTotal,
+              precoSugerido,
+              codigoPeca,
+              marcaPeca,
+              infoAdicional
+            ]
+          );
           });
 
           res.send("Nota e itens salvos no banco com sucesso");
@@ -645,6 +669,7 @@ app.get("/nota/:id/solicitacoes-finalizadas", (req, res) => {
     LEFT JOIN usuarios ON usuarios.id = solicitacoes_peca.vendedor_id
     LEFT JOIN notas ON notas.id = solicitacoes_peca.nota_id
     WHERE solicitacoes_peca.nota_id = ?
+    AND solicitacoes_peca.status = 'Entregue'
     ORDER BY solicitacoes_peca.id DESC
     `,
     [notaId],
@@ -867,6 +892,9 @@ app.post("/solicitacoes-peca", (req, res) => {
           const quantidadeNota = Number(item.quantidade || 0);
           const jaSolicitado = Number(saldo.total_solicitado || 0);
           const disponivel = quantidadeNota - jaSolicitado;
+          const descricaoFinal = item.codigo_peca
+          ? `${item.codigo_peca} - ${item.descricao}`
+          : `${item.codigo || ""} - ${item.descricao}`;
 
           let status = "Aberta";
 
@@ -892,7 +920,7 @@ app.post("/solicitacoes-peca", (req, res) => {
               item.nota_id,
               item.id,
               codigoLoja,
-              item.descricao || "",
+              descricaoFinal, //
               quantidadeSolicitada,
               status,
               mensagem,
@@ -925,7 +953,7 @@ app.get("/solicitacoes-peca", (req, res) => {
       ON usuarios.id = solicitacoes_peca.vendedor_id
     LEFT JOIN notas
       ON notas.id = solicitacoes_peca.nota_id
-    WHERE solicitacoes_peca.status NOT IN ('Entregue', 'Cancelada')
+    WHERE solicitacoes_peca.status = 'Aberta'
     ORDER BY solicitacoes_peca.id DESC
     `,
     (erro, solicitacoes) => {
@@ -940,22 +968,75 @@ app.get("/solicitacoes-peca", (req, res) => {
 });
 app.post("/solicitacoes-peca/:id/status", (req, res) => {
   const id = req.params.id;
-  const status = req.body.status;
+  const { status, conferido, nome, senha } = req.body;
 
-  db.run(
-    `
-    UPDATE solicitacoes_peca
-    SET status = ?
-    WHERE id = ?
-    `,
-    [status, id],
-    (erro) => {
+  if (!nome || !senha) {
+    return res.status(400).send("Informe nome e senha.");
+  }
+
+  if (!["Aberta", "Entregue", "Não encontrada"].includes(status)) {
+    return res.status(400).send("Status inválido.");
+  }
+
+  if (!["Sim", "Não"].includes(conferido)) {
+    return res.status(400).send("Informe se foi conferido.");
+  }
+
+  db.get(
+    "SELECT * FROM usuarios WHERE nome = ?",
+    [nome],
+    async (erro, usuario) => {
       if (erro) {
         console.log(erro);
-        return res.status(500).send("Erro ao atualizar status");
+        return res.status(500).send("Erro ao validar usuário");
       }
 
-      res.send("Status atualizado");
+      if (!usuario) {
+        return res.status(401).send("Usuário não encontrado");
+      }
+
+      const senhaBanco = usuario.senha || usuario.senha_hash || usuario.password;
+
+      if (!senhaBanco) {
+        return res.status(400).send("Erro: senha do usuário não encontrada no banco.");
+      }
+
+      let senhaOk = false;
+
+      if (String(senhaBanco).startsWith("$2")) {
+        senhaOk = await bcrypt.compare(senha, senhaBanco);
+      } else {
+        senhaOk = senha === senhaBanco;
+      }
+
+      if (!senhaOk) {
+        return res.status(401).send("Senha incorreta");
+      }
+
+      if (usuario.cargo !== "estoque" && usuario.cargo !== "admin") {
+        return res.status(403).send("Usuário sem permissão.");
+      }
+
+      db.run(
+        `
+        UPDATE solicitacoes_peca
+        SET 
+          status = ?,
+          conferido = ?,
+          finalizado_por = ?,
+          finalizado_em = ?
+        WHERE id = ?
+        `,
+        [status, conferido, usuario.nome, new Date().toISOString(), id],
+        (erro) => {
+          if (erro) {
+            console.log(erro);
+            return res.status(500).send("Erro ao atualizar solicitação");
+          }
+
+          return res.send("Solicitação atualizada com sucesso");
+        }
+      );
     }
   );
 });

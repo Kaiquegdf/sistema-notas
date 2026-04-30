@@ -131,40 +131,46 @@ async function carregarSolicitacoes() {
       </div>
     `).join("");
 
-    lista.innerHTML += `
-      <div class="ocorrencia-card">
-        <div class="ocorrencia-topo">
-          <div>
-            <span class="ocorrencia-tipo">${s.status}</span>
-            <h3>${s.codigo_loja} - ${s.descricao || "Peça não encontrada"}</h3>
-          </div>
-
-          <select onchange="alterarStatusSolicitacao(${s.id}, this.value)">
-          <option value="Aberta" ${s.status === "Aberta" ? "selected" : ""}>Aberta</option>
-          <option value="Entregue" ${s.status === "Entregue" ? "selected" : ""}>Entregue</option>
-          <option value="Não encontrada" ${s.status === "Não encontrada" ? "selected" : ""}>Não encontrada</option>
-          </select>
-          </div>
-
-        <div class="mensagem-vinculada">
-          <strong>Vendedor:</strong> ${s.vendedor_nome || "-"}<br>
-          <strong>Quantidade:</strong> ${s.quantidade_solicitada}<br>
-          <strong>Nota:</strong> ${s.numero_nota || "Não vinculada"} - ${s.fornecedor_nota || ""}<br>
-          <strong>Mensagem do vendedor:</strong>
-          <p>${s.mensagem || "-"}</p>
-          <small>${formatarDataHora(s.criado_em)}</small>
-        </div>
-
-        <div class="respostas">
-          ${respostasHtml}
-        </div>
-
-        <div class="responder-box">
-          <textarea id="resposta_solicitacao_${s.id}" placeholder="Responder ao vendedor..."></textarea>
-          <button onclick="responderSolicitacao(${s.id})">Responder</button>
-        </div>
+lista.innerHTML += `
+  <div class="ocorrencia-card">
+    <div class="ocorrencia-topo">
+      <div>
+        <span class="ocorrencia-tipo">${s.status}</span>
+        <h3>${s.codigo_loja || "-"} - ${s.descricao || "-"}</h3>
       </div>
-    `;
+    </div>
+
+    <div class="mensagem-vinculada">
+      <strong>Vendedor:</strong> ${s.vendedor_nome || "-"}<br>
+      <strong>Quantidade:</strong> ${s.quantidade_solicitada}<br>
+      <strong>Nota:</strong> ${s.numero_nota || "-"} - ${s.fornecedor_nota || ""}<br>
+      <strong>Conferido:</strong> ${s.conferido || "Não informado"}<br>
+      <small>${formatarDataHora(s.criado_em)}</small>
+    </div>
+
+    <br>
+
+    <label>Status</label>
+    <select id="status_${s.id}">
+      <option value="Aberta" ${s.status === "Aberta" ? "selected" : ""}>Aberta</option>
+      <option value="Entregue" ${s.status === "Entregue" ? "selected" : ""}>Entregue</option>
+      <option value="Não encontrada" ${s.status === "Não encontrada" ? "selected" : ""}>Não encontrada</option>
+    </select>
+
+    <br><br>
+
+    <label>Peça conferida?</label>
+    <select id="conferido_${s.id}">
+      <option value="">Selecione</option>
+      <option value="Sim" ${s.conferido === "Sim" ? "selected" : ""}>Sim</option>
+      <option value="Não" ${s.conferido === "Não" ? "selected" : ""}>Não</option>
+    </select>
+
+    <br><br>
+
+    <button onclick="finalizarSolicitacao(${s.id})">Salvar / Finalizar</button>
+  </div>
+`;
   }
 }
 
@@ -198,14 +204,36 @@ async function responderSolicitacao(id) {
   await carregarSolicitacoes();
 }
 
-async function alterarStatusSolicitacao(id, status) {
-  await fetch(`/solicitacoes-peca/${id}/status`, {
+async function finalizarSolicitacao(id) {
+  const status = document.getElementById(`status_${id}`).value;
+  const conferido = document.getElementById(`conferido_${id}`).value;
+
+  if (!conferido) {
+    alert("Informe se a peça foi conferida.");
+    return;
+  }
+
+  const nome = prompt("Nome do estoquista:");
+  if (!nome) return;
+
+  const senha = prompt("Senha:");
+  if (!senha) return;
+
+  const resposta = await fetch(`/solicitacoes-peca/${id}/status`, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded"
     },
-    body: `status=${encodeURIComponent(status)}`
+    body:
+      `status=${encodeURIComponent(status)}` +
+      `&conferido=${encodeURIComponent(conferido)}` +
+      `&nome=${encodeURIComponent(nome)}` +
+      `&senha=${encodeURIComponent(senha)}`
   });
+
+  const texto = await resposta.text();
+
+  alert(texto);
 
   await carregarSolicitacoes();
 }
@@ -285,7 +313,7 @@ async function iniciarPainelEstoque() {
   await carregarNotasEstoque();
   await verificarNovasSolicitacoes();
 
-  setInterval(verificarNovasSolicitacoes, 30000);
+  setInterval(verificarNovasSolicitacoes, 20000);
 }
 
 iniciarPainelEstoque();
