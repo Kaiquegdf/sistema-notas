@@ -43,11 +43,10 @@
     <table>
       <thead>
         <tr>
-          <th>Nota</th>
-          <th>Fornecedor</th>
-          <th>Data</th>
-          <th>Status</th>
-          <th>Ação</th>
+        <th>Nota Fiscal</th>
+        <th>Fornecedor</th>
+        <th>Volumes</th>
+        <th>Status</th>
         </tr>
       </thead>
       <tbody id="listaEstoque"></tbody>
@@ -96,19 +95,16 @@ async function carregarNotasEstoque() {
     return;
   }
 
-  notas.forEach(nota => {
-    lista.innerHTML += `
-      <tr>
-        <td><strong>${nota.numero}</strong></td>
-        <td>${nota.fornecedor}</td>
-        <td>${formatarData(nota.data)}</td>
-        <td>${nota.status || "Importada"}</td>
-        <td>
-          <a href="/nota.html?id=${nota.id}">Abrir nota</a>
-        </td>
-      </tr>
-    `;
-  });
+notas.forEach(nota => {
+  lista.innerHTML += `
+    <tr>
+      <td><strong>${nota.numero}</strong></td>
+      <td>${nota.fornecedor}</td>
+      <td>${nota.volumes || "-"}</td>
+      <td>${nota.status || "Importada"}</td>
+    </tr>
+  `;
+});
 }
 
 async function carregarSolicitacoes() {
@@ -214,22 +210,36 @@ async function alterarStatusSolicitacao(id, status) {
   await carregarSolicitacoes();
 }
 
-let idsSolicitacoesConhecidas = [];
+let ultimoIdVisto = 0;
+let primeiraVerificacao = true;
 
 function tocarSomAlerta() {
   const som = document.getElementById("somAlerta");
 
-  if (som) {
-    som.currentTime = 0;
-    som.play().catch(() => {
-      console.log("Som bloqueado pelo navegador até haver interação na página.");
-    });
+  if (!som) {
+    console.log("Áudio não encontrado");
+    return;
   }
+
+  som.currentTime = 0;
+
+  som.play().catch((erro) => {
+    console.log("Som bloqueado pelo navegador. Clique na tela uma vez.", erro);
+  });
 }
 
 function mostrarNotificacao(texto) {
-  document.getElementById("notificacaoTexto").innerText = texto;
-  document.getElementById("notificacaoTela").style.display = "flex";
+  const notificacao = document.getElementById("notificacaoTela");
+  const textoNotificacao = document.getElementById("notificacaoTexto");
+
+  if (!notificacao || !textoNotificacao) {
+    console.log("Elemento da notificação não encontrado");
+    return;
+  }
+
+  textoNotificacao.innerText = texto;
+  notificacao.style.display = "flex";
+
   tocarSomAlerta();
 }
 
@@ -241,17 +251,21 @@ async function verificarNovasSolicitacoes() {
   const resposta = await fetch("/solicitacoes-peca");
   const solicitacoes = await resposta.json();
 
-  const idsAtuais = solicitacoes.map(s => s.id);
+  console.log("Verificando solicitações:", solicitacoes);
 
-  if (idsSolicitacoesConhecidas.length === 0) {
-    idsSolicitacoesConhecidas = idsAtuais;
+  if (solicitacoes.length === 0) return;
+
+  // pega o maior ID atual
+  const maiorIdAtual = Math.max(...solicitacoes.map(s => s.id));
+
+  if (primeiraVerificacao) {
+    ultimoIdVisto = maiorIdAtual;
+    primeiraVerificacao = false;
     return;
   }
 
-  const novas = solicitacoes.filter(s => !idsSolicitacoesConhecidas.includes(s.id));
-
-  if (novas.length > 0) {
-    const nova = novas[0];
+  if (maiorIdAtual > ultimoIdVisto) {
+    const nova = solicitacoes.find(s => s.id === maiorIdAtual);
 
     mostrarNotificacao(
       `Nova solicitação: ${nova.codigo_loja} - ${nova.descricao || "Peça"}`
@@ -260,7 +274,10 @@ async function verificarNovasSolicitacoes() {
     await carregarSolicitacoes();
   }
 
-  idsSolicitacoesConhecidas = idsAtuais;
+  ultimoIdVisto = maiorIdAtual;
+
+  await carregarSolicitacoes();
+  await carregarNotasEstoque();
 }
 
 async function iniciarPainelEstoque() {
@@ -268,7 +285,7 @@ async function iniciarPainelEstoque() {
   await carregarNotasEstoque();
   await verificarNovasSolicitacoes();
 
-  setInterval(verificarNovasSolicitacoes, 5000);
+  setInterval(verificarNovasSolicitacoes, 30000);
 }
 
 iniciarPainelEstoque();
