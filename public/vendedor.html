@@ -17,9 +17,16 @@
     >
 </header>
 
-<h2>Minhas solicitações</h2>
-<button onclick="carregarMinhasSolicitacoes()">Abertas</button>
-<button onclick="carregarSolicitacoesAntigas()">Antigas</button>
+<div class="card">
+  <h2>Minhas solicitações</h2>
+
+  <button onclick="carregarMinhasSolicitacoes()">Abertas</button>
+  <button onclick="carregarSolicitacoesAntigas()">Antigas</button>
+
+  <br><br>
+
+  <div id="listaSolicitacoes"></div>
+</div>
 
 <main>
   <p class="top-links">
@@ -176,7 +183,29 @@ async function carregarSolicitacoesAntigas() {
   const resposta = await fetch(`/vendedor/${usuario.id}/solicitacoes-antigas`);
   const solicitacoes = await resposta.json();
 
-  renderizarSolicitacoes(solicitacoes);
+  const lista = document.getElementById("listaSolicitacoes");
+  lista.innerHTML = "";
+
+  if (solicitacoes.length === 0) {
+    lista.innerHTML = "<p>Nenhuma solicitação antiga.</p>";
+    return;
+  }
+
+  for (const s of solicitacoes) {
+    lista.innerHTML += `
+      <div class="ocorrencia-card">
+        <span class="ocorrencia-tipo">${s.status}</span>
+
+        <h3>${s.codigo_loja} - ${s.descricao || "-"}</h3>
+
+        <p>
+          <strong>Quantidade:</strong> ${s.quantidade_solicitada}<br>
+          <strong>Nota:</strong> ${s.numero_nota || "-"}<br>
+          <strong>Mensagem:</strong> ${s.mensagem || "-"}
+        </p>
+      </div>
+    `;
+  }
 }
 carregarMinhasSolicitacoes();
 </script>

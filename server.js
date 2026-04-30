@@ -938,7 +938,6 @@ app.get("/solicitacoes-peca", (req, res) => {
     }
   );
 });
-
 app.post("/solicitacoes-peca/:id/status", (req, res) => {
   const id = req.params.id;
   const status = req.body.status;
