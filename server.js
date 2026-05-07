@@ -50,6 +50,7 @@ db.serialize(() => {
   db.run(`ALTER TABLE solicitacoes_peca ADD COLUMN conferido TEXT`, () => {});
   db.run(`ALTER TABLE solicitacoes_peca ADD COLUMN finalizado_por TEXT`, () => {});
   db.run(`ALTER TABLE solicitacoes_peca ADD COLUMN finalizado_em TEXT`, () => {});
+  db.run(`ALTER TABLE itens_nota ADD COLUMN ordem INTEGER`, () => {});
   
   db.run(`
     CREATE TABLE IF NOT EXISTS itens_nota (
@@ -152,7 +153,9 @@ async function criarUsuarioPadrao(nome, senha, cargo) {
 criarUsuarioPadrao("admin", "123", "admin");
 criarUsuarioPadrao("kaique", "123", "administrativo");
 criarUsuarioPadrao("estoque", "123", "estoque");
-criarUsuarioPadrao("vendedor", "123", "vendedor");
+criarUsuarioPadrao("italo", "123", "vendedor");
+criarUsuarioPadrao("nathan", "123", "vendedor");
+criarUsuarioPadrao("Emanuel", "123","vendedor");
 
 const app = express();
 
@@ -234,59 +237,64 @@ app.post("/importar-xml", upload.single("xml"), (req, res) => {
           const notaId = this.lastID;
           const itens = nfe.det || [];
 
-          itens.forEach((item) => {
-            const produto = item.prod[0];
+itens.forEach((item, index) => {
+  const produto = item.prod[0];
 
-            const codigo = produto.cProd?.[0] || "";
-            const infoAdicional = item.infAdProd?.[0] || "";
+  const codigo = produto.cProd?.[0] || "";
+  const infoAdicional = item.infAdProd?.[0] || "";
 
-            let codigoPeca = "";
-            let marcaPeca = "";
+  let codigoPeca = "";
+  let marcaPeca = "";
 
-            if (infoAdicional) {
-            const partesInfo = infoAdicional.split("|").map(p => p.trim());
+  if (infoAdicional) {
+    const partesInfo = infoAdicional.split("|").map(p => p.trim());
 
-            codigoPeca = partesInfo[0] || "";
-            marcaPeca = partesInfo[1] || "";
-            } 
-            const descricao = produto.xProd?.[0] || "";
-            const quantidade = produto.qCom?.[0] || "";
-            const valorUnitario = produto.vUnCom?.[0] || "";
-            const valorTotal = produto.vProd?.[0] || "";
-            const precoSugerido = Number(valorUnitario || 0) * 1.896;
+    codigoPeca = partesInfo[0] || "";
+    marcaPeca = partesInfo[1] || "";
+  }
 
-          db.run(
-          `
-            INSERT INTO itens_nota (
-              nota_id,
-              codigo,
-              descricao,
-              quantidade,
-              valor_unitario,
-              valor_total,
-              preco_sugerido,
-              codigo_peca,
-              marca_peca,
-              info_adicional
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `,
-            [
-              notaId,
-              codigo,
-              descricao,
-              quantidade,
-              valorUnitario,
-              valorTotal,
-              precoSugerido,
-              codigoPeca,
-              marcaPeca,
-              infoAdicional
-            ]
-          );
-          });
+  const descricao = produto.xProd?.[0] || "";
+  const quantidade = produto.qCom?.[0] || "";
+  const valorUnitario = produto.vUnCom?.[0] || "";
+  const valorTotal = produto.vProd?.[0] || "";
 
-          res.send("Nota e itens salvos no banco com sucesso");
+  const precoSugerido =
+    Number(valorUnitario || 0) * 1.896;
+
+  db.run(
+    `
+    INSERT INTO itens_nota (
+      nota_id,
+      codigo,
+      descricao,
+      quantidade,
+      valor_unitario,
+      valor_total,
+      preco_sugerido,
+      codigo_peca,
+      marca_peca,
+      info_adicional,
+      ordem
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+    [
+      notaId,
+      codigo,
+      descricao,
+      quantidade,
+      valorUnitario,
+      valorTotal,
+      precoSugerido,
+      codigoPeca,
+      marcaPeca,
+      infoAdicional,
+      index
+    ]
+  );
+});
+
+          res.send("XML importado com sucesso");
         }
       );
     });
@@ -322,7 +330,7 @@ app.get("/nota/:id", (req, res) => {
 app.get("/nota/:id/itens", (req, res) => {
   const id = req.params.id;
 
-  db.all("SELECT * FROM itens_nota WHERE nota_id = ?", [id], (erro, itens) => {
+  db.all("SELECT * FROM itens_nota WHERE nota_id = ? ORDER BY ordem ASC", [id], (erro, itens) => {
     if (erro) {
       return res.status(500).send("Erro ao buscar itens");
     }
@@ -804,7 +812,7 @@ app.post("/nota/:id/codigos-loja", (req, res) => {
   }
 
   db.all(
-    "SELECT id FROM itens_nota WHERE nota_id = ? ORDER BY id ASC",
+    "SELECT id FROM itens_nota WHERE nota_id = ? ORDER BY ordem ASC",
     [notaId],
     (erro, itens) => {
       if (erro) {
@@ -1175,6 +1183,8 @@ app.get("/vendedor/:id/solicitacoes-antigas", (req, res) => {
     }
   );
 });
-app.listen(3000, () => {
-  console.log("Servidor rodando na porta 3000");
+app.listen(3000, "0.0.0.0", () => {
+  console.log("Servidor rodando:");
+  console.log("http://localhost:3000");
+  console.log("http://192.168.15.82:3000");
 });
