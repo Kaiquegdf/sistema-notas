@@ -1406,6 +1406,56 @@ app.post("/nota/:id/importar-xml", upload.single("xml"), (req, res) => {
     });
   });
 });
+app.get("/buscar-peca", (req, res) => {
+  const termo = String(req.query.termo || "").trim();
+
+  if (!termo) {
+    return res.json([]);
+  }
+
+  db.all(
+    `
+    SELECT
+      itens_nota.codigo_loja,
+      itens_nota.codigo_peca,
+      itens_nota.descricao,
+      itens_nota.quantidade,
+
+      notas.numero,
+      notas.fornecedor,
+      notas.status,
+      notas.data_recebimento
+
+    FROM itens_nota
+
+    LEFT JOIN notas
+      ON notas.id = itens_nota.nota_id
+
+    WHERE
+      itens_nota.codigo_loja LIKE ?
+      OR itens_nota.codigo_peca LIKE ?
+      OR itens_nota.descricao LIKE ?
+
+    ORDER BY notas.id DESC
+
+    LIMIT 30
+    `,
+    [
+      `%${termo}%`,
+      `%${termo}%`,
+      `%${termo}%`
+    ],
+    (erro, itens) => {
+
+      if (erro) {
+        console.log(erro);
+        return res.status(500).send("Erro ao buscar peça");
+      }
+
+      res.json(itens);
+    }
+  );
+});
 app.listen(3000, "0.0.0.0", () => {
   console.log("Servidor rodando:");
   console.log("http://localhost:3000");

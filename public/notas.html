@@ -47,7 +47,39 @@
     </button>
   </div>
 </div>
+<div class="filtros-notas">
 
+  <div>
+    <label>Status</label><br>
+
+    <select id="filtroStatus" onchange="carregarNotas()">
+      <option value="">Todos</option>
+
+      <option>Aguardando mercadoria</option>
+      <option>Mercadoria recebida</option>
+      <option>Liberada para estoque</option>
+      <option>Em conferência</option>
+      <option>Conferir ocorrências</option>
+      <option>Iury</option>
+      <option>Lançamento</option>
+      <option>Marcação</option>
+      <option>Finalizada</option>
+    </select>
+  </div>
+
+  <div>
+    <label>Data inicial</label><br>
+    <input type="date" id="filtroDataInicial" onchange="carregarNotas()">
+  </div>
+
+  <div>
+    <label>Data final</label><br>
+    <input type="date" id="filtroDataFinal" onchange="carregarNotas()">
+  </div>
+
+</div>
+
+<br>
 
     <table>
       <thead>
@@ -113,6 +145,14 @@ function classeStatus(texto) {
 async function carregarNotas() {
   const resposta = await fetch("/notas");
   const notas = await resposta.json();
+  const statusFiltro =
+  document.getElementById("filtroStatus")?.value || "";
+
+const dataInicial =
+  document.getElementById("filtroDataInicial")?.value || "";
+
+const dataFinal =
+  document.getElementById("filtroDataFinal")?.value || "";
 
   const lista = document.getElementById("listaNotas");
   lista.innerHTML = "";
@@ -125,8 +165,41 @@ async function carregarNotas() {
       usuario.cargo === "admin" ||
       usuario.cargo === "administrativo"
     );
+const notasFiltradas = notas.filter(nota => {
 
-  notas.forEach(nota => {
+  if (
+    statusFiltro &&
+    nota.status !== statusFiltro
+  ) {
+    return false;
+  }
+
+  if (dataInicial || dataFinal) {
+
+    const dataNota = new Date(nota.data_recebimento || nota.data);
+
+    if (dataInicial) {
+      const inicio = new Date(dataInicial);
+
+      if (dataNota < inicio) {
+        return false;
+      }
+    }
+
+    if (dataFinal) {
+      const fim = new Date(dataFinal);
+
+      fim.setHours(23, 59, 59, 999);
+
+      if (dataNota > fim) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+});
+  notasFiltradas.forEach(nota => {
     lista.innerHTML += `
       <tr>
         <td>

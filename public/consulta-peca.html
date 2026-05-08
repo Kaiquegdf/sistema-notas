@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Consulta de Peças</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<header class="top-header">
+  <h1>Consulta de Peças</h1>
+</header>
+
+<div class="top-links">
+  <a href="/vendedor.html">
+    Fazer solicitação
+  </a>
+</div>
+
+<main>
+
+<div class="card">
+
+  <h2>Pesquisar peça</h2>
+
+  <input
+    id="busca"
+    placeholder="Código, peça ou descrição"
+  >
+
+  <button onclick="buscarPeca()">
+    Pesquisar
+  </button>
+
+</div>
+
+<div class="card">
+
+  <div id="resultado"></div>
+
+</div>
+
+</main>
+
+<script>
+
+function formatarData(data) {
+  if (!data) return "-";
+
+  if (data.includes("/")) {
+    return data;
+  }
+
+  const d = new Date(data);
+
+  if (isNaN(d)) return data;
+
+  return d.toLocaleDateString("pt-BR");
+}
+
+async function buscarPeca() {
+
+  const termo =
+    document.getElementById("busca").value;
+
+  if (!termo.trim()) {
+    return;
+  }
+
+  const resposta =
+    await fetch(`/buscar-peca?termo=${encodeURIComponent(termo)}`);
+
+  const itens = await resposta.json();
+
+  const resultado =
+    document.getElementById("resultado");
+
+  resultado.innerHTML = "";
+
+  if (itens.length === 0) {
+    resultado.innerHTML =
+      "<p>Nenhuma peça encontrada.</p>";
+
+    return;
+  }
+
+  itens.forEach(item => {
+
+    resultado.innerHTML += `
+      <div class="ocorrencia-card">
+
+        <h3>
+          ${item.codigo_loja || "-"}
+          -
+          ${item.descricao || "-"}
+        </h3>
+
+        <p>
+          <strong>Cód. peça:</strong>
+          ${item.codigo_peca || "-"}
+        </p>
+
+        <p>
+          <strong>Quantidade na compra:</strong>
+          ${item.quantidade || "-"}
+        </p>
+
+        <p>
+          <strong>Fornecedor:</strong>
+          ${item.fornecedor || "-"}
+        </p>
+
+        <p>
+          <strong>Nota:</strong>
+          ${item.numero || "-"}
+        </p>
+
+        <p>
+          <strong>Status:</strong>
+          ${item.status || "-"}
+        </p>
+
+        <p>
+          <strong>Recebimento:</strong>
+          ${formatarData(item.data_recebimento)}
+        </p>
+
+      </div>
+    `;
+  });
+}
+
+</script>
+
+</body>
+</html>
