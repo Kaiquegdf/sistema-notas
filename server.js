@@ -872,13 +872,19 @@ app.post("/solicitacoes-peca", (req, res) => {
   db.get(
     `
     SELECT 
-      itens_nota.*,
-      notas.id AS nota_id,
-      notas.numero AS numero_nota,
-      notas.status AS status_nota
+    itens_nota.*,
+    notas.id AS nota_id,
+    notas.numero AS numero_nota,
+    notas.status AS status_nota
     FROM itens_nota
     JOIN notas ON notas.id = itens_nota.nota_id
     WHERE itens_nota.codigo_loja = ?
+    AND notas.status IN (
+    'Importada',
+    'Administrativo',
+    'Liberada para estoque',
+    'Em conferência'
+    )
     ORDER BY notas.id DESC, itens_nota.id ASC
     LIMIT 1
     `,
@@ -890,14 +896,17 @@ app.post("/solicitacoes-peca", (req, res) => {
       }
 
       if (!item) {
-      return res.status(404).send("Peça não encontrada em nenhuma nota.");}
+    return res.status(404).send(
+    "Peça não disponível para solicitação. Verifique no estoque ou na marcação."
+    );
+    }
 
       db.get(
         `
         SELECT COALESCE(SUM(quantidade_solicitada), 0) AS total_solicitado
         FROM solicitacoes_peca
         WHERE item_id = ?
-        AND status NOT IN ('Cancelada')
+        AND status IN ('Aberta', 'Entregue')
         `,
         [item.id],
         (erro, saldo) => {
@@ -1071,7 +1080,7 @@ app.get("/vendedor/:id/solicitacoes-peca", (req, res) => {
     LEFT JOIN usuarios ON usuarios.id = solicitacoes_peca.vendedor_id
     LEFT JOIN notas ON notas.id = solicitacoes_peca.nota_id
     WHERE solicitacoes_peca.vendedor_id = ?
-    AND solicitacoes_peca.status NOT IN ('Entregue', 'Cancelada')
+    AND solicitacoes_peca.status NOT IN ('Entregue', 'Cancelada', 'Não encontrada')
     ORDER BY solicitacoes_peca.id DESC
     `,
     [vendedorId],
@@ -1178,7 +1187,7 @@ app.get("/vendedor/:id/solicitacoes-antigas", (req, res) => {
     LEFT JOIN usuarios ON usuarios.id = solicitacoes_peca.vendedor_id
     LEFT JOIN notas ON notas.id = solicitacoes_peca.nota_id
     WHERE solicitacoes_peca.vendedor_id = ?
-      AND solicitacoes_peca.status IN ('Entregue', 'Cancelada')
+      AND solicitacoes_peca.status IN ('Entregue', 'Cancelada', 'Não encontrada')
     ORDER BY solicitacoes_peca.id DESC
     `,
     [vendedorId],

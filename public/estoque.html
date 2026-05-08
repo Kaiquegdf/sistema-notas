@@ -313,7 +313,7 @@ async function iniciarPainelEstoque() {
   await carregarNotasEstoque();
   await verificarNovasSolicitacoes();
 
-  setInterval(verificarNovasSolicitacoes, 20000);
+  setInterval(verificarNovasSolicitacoes, 10000);
 }
 
 iniciarPainelEstoque();
