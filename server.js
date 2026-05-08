@@ -51,6 +51,7 @@ db.serialize(() => {
   db.run(`ALTER TABLE solicitacoes_peca ADD COLUMN finalizado_por TEXT`, () => {});
   db.run(`ALTER TABLE solicitacoes_peca ADD COLUMN finalizado_em TEXT`, () => {});
   db.run(`ALTER TABLE itens_nota ADD COLUMN ordem INTEGER`, () => {});
+  db.run(`ALTER TABLE notas ADD COLUMN data_recebimento TEXT`, () => {});
   
   db.run(`
     CREATE TABLE IF NOT EXISTS itens_nota (
@@ -389,17 +390,25 @@ app.post("/nota/:id/admin", (req, res) => {
   const cte = req.body.cte || "";
   const complementoManual = req.body.complemento_manual || "";
   const observacaoAdmin = req.body.observacao_admin || "";
+  const dataRecebimento = req.body.data_recebimento || "";
 
   db.run(
     `
-    UPDATE notas
-    SET
-      cte = ?,
-      complemento_manual = ?,
-      observacao_admin = ?
-    WHERE id = ?
+  UPDATE notas
+  SET
+  cte = ?,
+  complemento_manual = ?,
+  observacao_admin = ?,
+  data_recebimento = ?
+  WHERE id = ?
     `,
-    [cte, complementoManual, observacaoAdmin, id],
+    [
+  cte,
+  complementoManual,
+  observacaoAdmin,
+  dataRecebimento,
+  id
+    ],
     function (erro) {
       if (erro) {
         console.log(erro);
@@ -1180,6 +1189,30 @@ app.get("/vendedor/:id/solicitacoes-antigas", (req, res) => {
       }
 
       res.json(solicitacoes);
+    }
+  );
+});
+app.get("/notas-retirada", (req, res) => {
+  db.all(
+    `
+    SELECT *
+    FROM notas
+    WHERE TRIM(LOWER(status)) IN (
+      'liberada para estoque',
+      'em conferência',
+      'conferir ocorrências'
+    )
+    ORDER BY id DESC
+    `,
+    (erro, notas) => {
+      if (erro) {
+        console.log(erro);
+        return res.status(500).send("Erro ao buscar notas");
+      }
+
+      console.log(notas);
+
+      res.json(notas);
     }
   );
 });

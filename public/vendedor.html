@@ -58,6 +58,22 @@
     <button onclick="criarSolicitacao()">Solicitar peça</button>
   </div>
 
+  <div class="bloco">
+  <h2>Notas disponíveis para retirada de peças</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Nota Fiscal</th>
+        <th>Fornecedor</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+
+    <tbody id="tabela-retirada"></tbody>
+  </table>
+</div>
+
   
 </main>
 
@@ -204,6 +220,39 @@ async function carregarSolicitacoesAntigas() {
     `;
   }
 }
+
+async function carregarNotasRetirada() {
+  const resposta = await fetch("/notas-retirada");
+
+  const notas = await resposta.json();
+
+  const tbody = document.getElementById("tabela-retirada");
+
+  tbody.innerHTML = "";
+
+  if (!notas.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="3">
+          Nenhuma nota disponível.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  notas.forEach(nota => {
+    tbody.innerHTML += `
+      <tr>
+        <td>${nota.numero}</td>
+        <td>${nota.fornecedor}</td>
+        <td>${nota.status}</td>
+      </tr>
+    `;
+  });
+}
+
+carregarNotasRetirada();
 carregarMinhasSolicitacoes();
 </script>
 

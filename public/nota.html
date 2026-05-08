@@ -28,6 +28,15 @@
   <div class="card">
   <h2>Dados Administrativos</h2>
 
+  <div class="campo">
+  <label>Data de recebimento</label>
+
+  <input
+    type="date"
+    id="dataRecebimento"
+  />
+</div>
+
   <div class="grid">
     <div>
       <label>CT-e</label><br>
@@ -178,11 +187,21 @@ function getUsuarioLogado() {
 function formatarData(data) {
   if (!data) return "-";
 
-  const d = new Date(data);
+  // se já estiver no formato brasileiro
+  if (data.includes("/")) {
+    return data;
+  }
 
-  if (isNaN(d)) return data;
+  // formato yyyy-mm-dd
+  if (data.includes("-")) {
+    const partes = data.split("-");
 
-  return d.toLocaleDateString("pt-BR");
+    if (partes.length >= 3) {
+      return `${partes[2]}/${partes[1]}/${partes[0]}`;
+    }
+  }
+
+  return data;
 }
 
 function formatarDataHora(data) {
@@ -222,6 +241,7 @@ async function criarOcorrencia() {
   const tipo = document.getElementById("ocorrencia_tipo").value;
   const titulo = document.getElementById("ocorrencia_titulo").value;
   const mensagem = document.getElementById("ocorrencia_mensagem").value;
+  
 
   if (!usuario) {
     alert("Faça login novamente.");
@@ -428,6 +448,7 @@ async function carregarNota() {
   document.getElementById("observacao_admin").value = nota.observacao_admin || "";
   document.getElementById("markup_nota").value = nota.markup_nota || "1.896";
   document.getElementById("statusUnico").value = nota.status || "Importada";
+  document.getElementById("dataRecebimento").value = nota.data_recebimento || "";
 
   montarResumoAdmin(nota);
   await carregarItens(nota);
@@ -470,10 +491,23 @@ function montarResumoAdmin(nota) {
   const resumoAdminCard = document.getElementById("resumoAdminCard");
 
   const camposResumo = [
-    { titulo: "CT-e", valor: nota.cte },
-    { titulo: "Complemento manual", valor: nota.complemento_manual },
-    { titulo: "Observação administrativa", valor: nota.observacao_admin }
-  ];
+  {
+    titulo: "Data de recebimento",
+    valor: formatarData(nota.data_recebimento)
+  },
+
+  { titulo: "CT-e", valor: nota.cte },
+
+  {
+    titulo: "Complemento manual",
+    valor: nota.complemento_manual
+  },
+
+  {
+    titulo: "Observação administrativa",
+    valor: nota.observacao_admin
+  }
+];
 
   const camposPreenchidos = camposResumo.filter(c => c.valor && String(c.valor).trim() !== "");
 
@@ -522,22 +556,32 @@ const camposBloqueados = [
 
 async function salvarDadosAdmin() {
   const cte = document.getElementById("cte").value;
-  const complementoManual = document.getElementById("complemento_manual").value;
-  const observacaoAdmin = document.getElementById("observacao_admin").value;
+
+  const complementoManual =
+    document.getElementById("complemento_manual").value;
+
+  const observacaoAdmin =
+    document.getElementById("observacao_admin").value;
+
+  const dataRecebimento =
+    document.getElementById("dataRecebimento").value;
 
   await fetch(`/nota/${notaId}/admin`, {
     method: "POST",
+
     headers: {
-      "Content-Type": "application/x-www-form-urlencoded"
+      "Content-Type": "application/json"
     },
-    body:
-      `cte=${encodeURIComponent(cte)}` +
-      `&complemento_manual=${encodeURIComponent(complementoManual)}` +
-      `&observacao_admin=${encodeURIComponent(observacaoAdmin)}`
+
+    body: JSON.stringify({
+      cte,
+      complemento_manual: complementoManual,
+      observacao_admin: observacaoAdmin,
+      data_recebimento: dataRecebimento
+    })
   });
 
-  alert("Dados administrativos salvos");
-  await carregarNota();
+  alert("Dados administrativos salvos.");
 }
 
 async function salvarStatusUnico() {
@@ -602,6 +646,7 @@ async function salvarCodigosLoja() {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({ codigos })
+    
   });
 
   const mensagem = await resposta.text();

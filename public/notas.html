@@ -27,13 +27,14 @@
 
     <table>
       <thead>
-        <tr>
-          <th>Nota</th>
-          <th>Fornecedor</th>
-          <th>Data</th>
-          <th>Status</th>>
-          <th>Ação</th>
-        </tr>
+       <tr>
+        <th>Nota</th>
+        <th>Fornecedor</th>
+        <th>Data emissão</th>
+        <th>Data recebimento</th>
+        <th>Status</th>
+        <th>Ação</th>
+      </tr>
       </thead>
       <tbody id="listaNotas"></tbody>
     </table>
@@ -43,12 +44,20 @@
 function formatarData(data) {
   if (!data) return "-";
 
-  const d = new Date(data);
-  if (isNaN(d)) return data;
+  data = String(data);
 
-  return d.toLocaleDateString("pt-BR");
+  if (data.includes("T")) {
+    data = data.split("T")[0];
+  }
+
+  if (data.includes("-")) {
+    const [ano, mes, dia] = data.split("-");
+
+    return `${dia}/${mes}/${ano}`;
+  }
+
+  return data;
 }
-
 function classeStatus(texto) {
   if (!texto) return "status-alerta";
 
@@ -92,21 +101,32 @@ async function carregarNotas() {
   notas.forEach(nota => {
     lista.innerHTML += `
       <tr>
-        <td><strong>${nota.numero}</strong></td>
+        <td>
+          <strong>${nota.numero}</strong>
+        </td>
+
         <td>${nota.fornecedor}</td>
+
         <td>${formatarData(nota.data)}</td>
 
+        <td>${formatarData(nota.data_recebimento)}</td>
+
         <td>
-        <span class="status ${classeStatus(nota.status)}">
-        ${nota.status || "Importada"}
-        </span>
+          <span class="status ${classeStatus(nota.status)}">
+            ${nota.status || "Importada"}
+          </span>
         </td>
+
         <td>
-          <a href="/nota.html?id=${nota.id}">Abrir nota</a>
+          <a href="/nota.html?id=${nota.id}">
+            Abrir
+          </a>
 
           ${
             podeExcluir
-              ? `<button onclick="excluirNota(${nota.id})">Excluir</button>`
+              ? `<button onclick="excluirNota(${nota.id})">
+                  Excluir
+                </button>`
               : ""
           }
         </td>
@@ -129,6 +149,5 @@ async function excluirNota(id) {
 
 carregarNotas();
 </script>
-
 </body>
 </html>
