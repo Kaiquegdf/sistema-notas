@@ -21,9 +21,33 @@
   <div class="card">
     <h2>Notas importadas</h2>
 
-    <div class="top-links">
-      <a href="/">Importar nova nota</a>
-    </div>
+   <div class="top-links">
+  <a href="/">Importar nova nota</a>
+
+  <button onclick="abrirModalNotaManual()">
+    Criar nota sem XML
+  </button>
+</div>
+
+    <div id="modalNotaManual" class="modal" style="display:none;">
+  <div class="card">
+    <h2>Nova nota sem XML</h2>
+
+    <label>Fornecedor</label>
+    <input id="fornecedorManual">
+
+    <br><br>
+
+    <button onclick="salvarNotaManual()">
+      Salvar
+    </button>
+
+    <button onclick="fecharModalNotaManual()">
+      Cancelar
+    </button>
+  </div>
+</div>
+
 
     <table>
       <thead>
@@ -41,6 +65,7 @@
   </div>
 </main>
 <script>
+
 function formatarData(data) {
   if (!data) return "-";
 
@@ -58,6 +83,7 @@ function formatarData(data) {
 
   return data;
 }
+
 function classeStatus(texto) {
   if (!texto) return "status-alerta";
 
@@ -70,7 +96,9 @@ function classeStatus(texto) {
   ) {
     return "status-ok";
   }
-
+  if (t.includes("aguardando xml")) {
+  return "status-alerta";
+}
   if (
     t.includes("ocorrência") ||
     t.includes("aguardando") ||
@@ -117,19 +145,31 @@ async function carregarNotas() {
           </span>
         </td>
 
-        <td>
-          <a href="/nota.html?id=${nota.id}">
-            Abrir
-          </a>
+          <td>
+  <a href="/nota.html?id=${nota.id}">
+    Abrir
+  </a>
 
-          ${
-            podeExcluir
-              ? `<button onclick="excluirNota(${nota.id})">
-                  Excluir
-                </button>`
-              : ""
-          }
-        </td>
+  ${
+    nota.status === "Aguardando XML"
+      ? `
+        <label class="botao-upload">
+          Importar XML
+          <input
+            type="file"
+            accept=".xml"
+            onchange="importarXmlExistente(event, ${nota.id})"
+            hidden
+          >
+        </label>
+      `
+      : ""
+  }
+
+  <button onclick="excluirNota(${nota.id})">
+    Excluir
+  </button>
+</td>
       </tr>
     `;
   });
@@ -147,7 +187,128 @@ async function excluirNota(id) {
   await carregarNotas();
 }
 
+async function salvarNotaManual() {
+  const fornecedor =
+    document.getElementById("fornecedorManual").value;
+
+  const resposta = await fetch("/nota/manual", {
+    method: "POST",
+
+    headers: {
+      "Content-Type": "application/json"
+    },
+
+    body: JSON.stringify({
+      fornecedor
+    })
+  });
+
+  const mensagem = await resposta.text();
+
+  alert(mensagem);
+
+  fecharModalNotaManual();
+
+  await carregarNotas();
+}
+
+function abrirModalNotaManual() {
+  document.getElementById("modalNotaManual").style.display = "flex";
+}
+
+function fecharModalNotaManual() {
+  document.getElementById("modalNotaManual").style.display = "none";
+}
+
+async function salvarNotaManual() {
+  const fornecedor =
+    document.getElementById("fornecedorManual").value;
+
+  if (!fornecedor.trim()) {
+    alert("Informe o fornecedor");
+    return;
+  }
+
+  const resposta = await fetch("/nota/manual", {
+    method: "POST",
+
+    headers: {
+      "Content-Type": "application/json"
+    },
+
+    body: JSON.stringify({
+      fornecedor
+    })
+  });
+
+  const mensagem = await resposta.text();
+
+  alert(mensagem);
+
+  fecharModalNotaManual();
+
+  document.getElementById("fornecedorManual").value = "";
+
+  await carregarNotas();
+}
+
+async function importarXmlExistente(event, notaId) {
+  const arquivo = event.target.files[0];
+
+  if (!arquivo) return;
+
+  const formData = new FormData();
+
+  formData.append("xml", arquivo);
+
+  const resposta = await fetch(
+    `/nota/${notaId}/importar-xml`,
+    {
+      method: "POST",
+      body: formData
+    }
+  );
+
+  const mensagem = await resposta.text();
+
+  alert(mensagem);
+
+  await carregarNotas();
+}
 carregarNotas();
 </script>
+<div
+  id="modalNotaManual"
+  style="
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.5);
+    justify-content:center;
+    align-items:center;
+    z-index:999;
+  "
+>
+  <div class="card" style="width:400px;">
+    <h2>Nova nota sem XML</h2>
+
+    <label>Fornecedor</label>
+
+    <input
+      id="fornecedorManual"
+      placeholder="Nome do fornecedor"
+    >
+
+    <br><br>
+
+    <button onclick="salvarNotaManual()">
+      Salvar
+    </button>
+
+    <button onclick="fecharModalNotaManual()">
+      Cancelar
+    </button>
+  </div>
+</div>
 </body>
 </html>

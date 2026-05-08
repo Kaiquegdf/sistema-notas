@@ -152,7 +152,7 @@ async function criarUsuarioPadrao(nome, senha, cargo) {
 }
 
 criarUsuarioPadrao("admin", "123", "admin");
-criarUsuarioPadrao("kaique", "123", "administrativo");
+criarUsuarioPadrao("kaique", "123", "admin");
 criarUsuarioPadrao("estoque", "123", "estoque");
 criarUsuarioPadrao("italo", "123", "vendedor");
 criarUsuarioPadrao("nathan", "123", "vendedor");
@@ -227,7 +227,7 @@ app.post("/importar-xml", upload.single("xml"), (req, res) => {
           valorBoleto,
           complemento,
           "1.896",
-          "Importada"
+          "Aguardando mercadoria"
         ],
         function (erro) {
           if (erro) {
@@ -425,8 +425,8 @@ app.post("/nota/:id/status-unico", (req, res) => {
   const status = req.body.status;
 
   const statusValidos = [
-    "Importada",
-    "Administrativo",
+    "Aguardando mercadoria",
+    "Mercadoria recebida",
     "Liberada para estoque",
     "Em conferência",
     "Conferir ocorrências",
@@ -461,8 +461,8 @@ app.post("/nota/:id/proxima-etapa", (req, res) => {
   const id = req.params.id;
 
   const fluxo = [
-    "Importada",
-    "Administrativo",
+    "Aguardando mercadoria",
+    "Mercadoria recebida",
     "Liberada para estoque",
     "Em conferência",
     "Conferir ocorrências",
@@ -480,7 +480,7 @@ app.post("/nota/:id/proxima-etapa", (req, res) => {
     let statusAtual = nota.status;
 
     if (!statusAtual || statusAtual.trim() === "") {
-      statusAtual = "Importada";
+      statusAtual = "Aguardando mercadoria";
     }
 
     const indiceAtual = fluxo.indexOf(statusAtual);
@@ -880,8 +880,8 @@ app.post("/solicitacoes-peca", (req, res) => {
     JOIN notas ON notas.id = itens_nota.nota_id
     WHERE itens_nota.codigo_loja = ?
     AND notas.status IN (
-    'Importada',
-    'Administrativo',
+    'Aguardando mercadoria',
+    'Mercadoria recebida',
     'Liberada para estoque',
     'Em conferência'
     )
@@ -1224,6 +1224,187 @@ app.get("/notas-retirada", (req, res) => {
       res.json(notas);
     }
   );
+});
+app.post("/nota/manual", (req, res) => {
+  const fornecedor = req.body.fornecedor || "";
+
+  if (!fornecedor.trim()) {
+    return res.status(400).send("Informe o fornecedor");
+  }
+
+  db.run(
+    `
+    INSERT INTO notas (
+      fornecedor,
+      status
+    )
+    VALUES (?, ?)
+    `,
+    [
+      fornecedor,
+      "Aguardando XML"
+    ],
+    function (erro) {
+      if (erro) {
+        console.log(erro);
+        return res.status(500).send("Erro ao criar nota");
+      }
+
+      res.send("Nota criada");
+    }
+  );
+});
+app.post("/nota/:id/importar-xml", upload.single("xml"), (req, res) => {
+  console.log("IMPORTANDO XML NA NOTA", req.params.id);
+  const notaId = req.params.id;
+  const caminhoArquivo = req.file.path;
+
+  fs.readFile(caminhoArquivo, "utf-8", (erro, conteudo) => {
+    if (erro) {
+      return res.send("Erro ao ler XML");
+    }
+
+    xml2js.parseString(conteudo, (erro, resultado) => {
+      if (erro) {
+        return res.send("Erro ao converter XML");
+      }
+
+      const nfe = resultado.nfeProc.NFe[0].infNFe[0];
+
+      const numeroNota = nfe.ide?.[0]?.nNF?.[0] || "";
+      const dataEmissao = nfe.ide?.[0]?.dhEmi?.[0] || "";
+      const fornecedor = nfe.emit?.[0]?.xNome?.[0] || "";
+
+      const frete = nfe.total?.[0]?.ICMSTot?.[0]?.vFrete?.[0] || "";
+      const volumes = nfe.transp?.[0]?.vol?.[0]?.qVol?.[0] || "";
+      const transportadora =
+        nfe.transp?.[0]?.transporta?.[0]?.xNome?.[0] || "";
+
+      const cnpjTransportadora =
+        nfe.transp?.[0]?.transporta?.[0]?.CNPJ?.[0] || "";
+
+      const vencimento =
+        nfe.cobr?.[0]?.dup?.[0]?.dVenc?.[0] || "";
+
+      const valorBoleto =
+        nfe.cobr?.[0]?.dup?.[0]?.vDup?.[0] || "";
+
+      const complemento =
+        nfe.infAdic?.[0]?.infCpl?.[0] || "";
+
+      db.serialize(() => {
+
+        db.run(
+          `
+          UPDATE notas
+          SET
+            numero = ?,
+            fornecedor = ?,
+            data = ?,
+            valor_frete = ?,
+            volumes = ?,
+            transportadora = ?,
+            cnpj_transportadora = ?,
+            vencimento = ?,
+            valor_boleto = ?,
+            complemento_icms = ?,
+            markup_nota = ?,
+            status = 'Importada'
+          WHERE id = ?
+          `,
+          [
+            numeroNota,
+            fornecedor,
+            dataEmissao,
+            frete,
+            volumes,
+            transportadora,
+            cnpjTransportadora,
+            vencimento,
+            valorBoleto,
+            complemento,
+            "1.896",
+            notaId
+          ]
+        );
+
+        db.run(
+          "DELETE FROM itens_nota WHERE nota_id = ?",
+          [notaId]
+        );
+
+        const itens = nfe.det || [];
+
+        itens.forEach((item, index) => {
+          const produto = item.prod[0];
+
+          const codigo = produto.cProd?.[0] || "";
+          const infoAdicional =
+            item.infAdProd?.[0] || "";
+
+          let codigoPeca = "";
+          let marcaPeca = "";
+
+          if (infoAdicional) {
+            const partesInfo =
+              infoAdicional.split("|").map(p => p.trim());
+
+            codigoPeca = partesInfo[0] || "";
+            marcaPeca = partesInfo[1] || "";
+          }
+
+          const descricao =
+            produto.xProd?.[0] || "";
+
+          const quantidade =
+            produto.qCom?.[0] || "";
+
+          const valorUnitario =
+            produto.vUnCom?.[0] || "";
+
+          const valorTotal =
+            produto.vProd?.[0] || "";
+
+          const precoSugerido =
+            Number(valorUnitario || 0) * 1.896;
+
+          db.run(
+            `
+            INSERT INTO itens_nota (
+              nota_id,
+              codigo,
+              descricao,
+              quantidade,
+              valor_unitario,
+              valor_total,
+              preco_sugerido,
+              codigo_peca,
+              marca_peca,
+              info_adicional,
+              ordem
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `,
+            [
+              notaId,
+              codigo,
+              descricao,
+              quantidade,
+              valorUnitario,
+              valorTotal,
+              precoSugerido,
+              codigoPeca,
+              marcaPeca,
+              infoAdicional,
+              index
+            ]
+          );
+        });
+
+        res.send("XML importado com sucesso");
+      });
+    });
+  });
 });
 app.listen(3000, "0.0.0.0", () => {
   console.log("Servidor rodando:");

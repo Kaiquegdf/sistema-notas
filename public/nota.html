@@ -65,8 +65,8 @@
 
     <label>Status atual</label>
     <select id="statusUnico">
-      <option>Importada</option>
-      <option>Administrativo</option>
+      <option>Aguardando mercadoria</option>
+      <option>Mercadoria recebida</option>
       <option>Liberada para estoque</option>
       <option>Em conferência</option>
       <option>Conferir ocorrências</option>
@@ -105,9 +105,9 @@
   <textarea
     id="codigos_loja"
     placeholder="Ex:
-12345
-98765
-45678"
+    12345
+    98765
+    45678"
   ></textarea>
 
   <br><br>
@@ -536,7 +536,7 @@ function aplicarPermissoes() {
 
   const cargo = usuario.cargo;
 
-  if (cargo === "admin" || cargo === "administrativo") {
+  if (cargo === "admin" || cargo === "Mercadoria recebida") {
     return;
   }
 
