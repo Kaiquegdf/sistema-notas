@@ -869,103 +869,146 @@ app.post("/solicitacoes-peca", (req, res) => {
     return res.status(400).send("Quantidade inválida");
   }
 
-  db.get(
-    `
-    SELECT 
+ db.all(
+  `
+  SELECT 
     itens_nota.*,
     notas.id AS nota_id,
     notas.numero AS numero_nota,
     notas.status AS status_nota
-    FROM itens_nota
-    JOIN notas ON notas.id = itens_nota.nota_id
-    WHERE itens_nota.codigo_loja = ?
-    AND notas.status IN (
-    'Aguardando mercadoria',
-    'Mercadoria recebida',
+  FROM itens_nota
+  JOIN notas ON notas.id = itens_nota.nota_id
+
+  WHERE itens_nota.codigo_loja = ?
+
+  AND notas.status IN (
     'Liberada para estoque',
-    'Em conferência'
-    )
-    ORDER BY notas.id DESC, itens_nota.id ASC
-    LIMIT 1
-    `,
-    [codigoLoja],
-    (erro, item) => {
+    'Em conferência',
+    'Conferir ocorrências'
+  )
+
+  ORDER BY notas.id DESC, itens_nota.id ASC
+  `,
+  [codigoLoja],
+  async (erro, itens) => {
       if (erro) {
         console.log(erro);
         return res.status(500).send("Erro ao buscar peça");
       }
 
-      if (!item) {
+      if (!itens || itens.length === 0) {
     return res.status(404).send(
     "Peça não disponível para solicitação. Verifique no estoque ou na marcação."
     );
     }
 
-      db.get(
-        `
-        SELECT COALESCE(SUM(quantidade_solicitada), 0) AS total_solicitado
-        FROM solicitacoes_peca
-        WHERE item_id = ?
-        AND status IN ('Aberta', 'Entregue')
-        `,
-        [item.id],
-        (erro, saldo) => {
-          if (erro) {
-            console.log(erro);
-            return res.status(500).send("Erro ao calcular saldo");
-          }
+let quantidadeRestante = quantidadeSolicitada;
 
-          const quantidadeNota = Number(item.quantidade || 0);
-          const jaSolicitado = Number(saldo.total_solicitado || 0);
-          const disponivel = quantidadeNota - jaSolicitado;
-          const descricaoFinal = item.codigo_peca
-          ? `${item.codigo_peca} - ${item.descricao}`
-          : `${item.codigo || ""} - ${item.descricao}`;
+for (const item of itens) {
 
-          let status = "Aberta";
+  const saldo = await new Promise((resolve, reject) => {
 
-          if (disponivel <= 0 || quantidadeSolicitada > disponivel) {
-          return res.status(400).send(`Sem saldo disponível. Quantidade da nota: ${quantidadeNota}, já solicitado: ${jaSolicitado}, disponível: ${disponivel}.`);}
-          db.run(
-            `
-            INSERT INTO solicitacoes_peca (
-              vendedor_id,
-              nota_id,
-              item_id,
-              codigo_loja,
-              descricao,
-              quantidade_solicitada,
-              status,
-              mensagem,
-              criado_em
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `,
-            [
-              vendedorId,
-              item.nota_id,
-              item.id,
-              codigoLoja,
-              descricaoFinal, //
-              quantidadeSolicitada,
-              status,
-              mensagem,
-              criadoEm
-            ],
-            (erro) => {
-              if (erro) {
-                console.log(erro);
-                return res.status(500).send("Erro ao criar solicitação");
-              }
+    db.get(
+      `
+      SELECT
+        COALESCE(SUM(quantidade_solicitada), 0)
+        AS total_solicitado
 
-              res.send(`Solicitação criada: ${status}`);
+      FROM solicitacoes_peca
+
+      WHERE item_id = ?
+      AND status IN ('Aberta', 'Entregue')
+      `,
+      [item.id],
+      (erro, resultado) => {
+
+        if (erro) {
+          reject(erro);
+        } else {
+          resolve(resultado);
+        }
+      }
+    );
+  });
+
+  const quantidadeNota =
+    Number(item.quantidade || 0);
+
+  const jaSolicitado =
+    Number(saldo.total_solicitado || 0);
+
+  const disponivel =
+    quantidadeNota - jaSolicitado;
+
+  if (disponivel <= 0) {
+    continue;
+  }
+
+  const quantidadeUsada =
+    Math.min(disponivel, quantidadeRestante);
+
+  const descricaoFinal = item.codigo_peca
+    ? `${item.codigo_peca} - ${item.descricao}`
+    : `${item.codigo || ""} - ${item.descricao}`;
+
+  await new Promise((resolve, reject) => {
+
+    db.run(
+      `
+      INSERT INTO solicitacoes_peca (
+        vendedor_id,
+        nota_id,
+        item_id,
+        codigo_loja,
+        descricao,
+        quantidade_solicitada,
+        status,
+        mensagem,
+        criado_em
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+      [
+        vendedorId,
+        item.nota_id,
+        item.id,
+        codigoLoja,
+        descricaoFinal,
+        quantidadeUsada,
+        "Aberta",
+        mensagem,
+        criadoEm
+      ],
+      (erro) => {
+
+        if (erro) {
+          reject(erro);
+        } else {
+          resolve();
+        }
+      }
+    );
+  });
+
+  quantidadeRestante -= quantidadeUsada;
+
+  if (quantidadeRestante <= 0) {
+    break;
+  }
+}
+
+if (quantidadeRestante > 0) {
+
+  return res.status(400).send(
+    `Saldo insuficiente. Faltaram ${quantidadeRestante} peça(s).`
+  );
+}
+
+res.send("Solicitação criada com sucesso");
             }
           );
         }
       );
-    }
-  );
-});
 app.get("/solicitacoes-peca", (req, res) => {
   db.all(
     `
