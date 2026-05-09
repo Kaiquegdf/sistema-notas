@@ -53,8 +53,12 @@
     </table>
   </div>
 </main>
-
+<script src="/auth.js"></script>
 <script>
+  const usuario = verificarPermissao([
+  "admin",
+  "estoque"
+]);
 function getUsuarioLogado() {
   return JSON.parse(localStorage.getItem("usuario"));
 }

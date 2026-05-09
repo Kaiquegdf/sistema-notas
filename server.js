@@ -52,6 +52,7 @@ db.serialize(() => {
   db.run(`ALTER TABLE solicitacoes_peca ADD COLUMN finalizado_em TEXT`, () => {});
   db.run(`ALTER TABLE itens_nota ADD COLUMN ordem INTEGER`, () => {});
   db.run(`ALTER TABLE notas ADD COLUMN data_recebimento TEXT`, () => {});
+  db.run(`ALTER TABLE solicitacoes_peca ADD COLUMN arquivada INTEGER DEFAULT 0`, () => {});
   
   db.run(`
     CREATE TABLE IF NOT EXISTS itens_nota (
@@ -881,11 +882,11 @@ app.post("/solicitacoes-peca", (req, res) => {
 
   WHERE itens_nota.codigo_loja = ?
 
-  AND notas.status IN (
-    'Liberada para estoque',
-    'Em conferência',
-    'Conferir ocorrências'
-  )
+AND notas.status IN (
+  'Mercadoria recebida',
+  'Liberada para estoque',
+  'Em conferência'
+)
 
   ORDER BY notas.id DESC, itens_nota.id ASC
   `,
@@ -1137,6 +1138,26 @@ app.get("/vendedor/:id/solicitacoes-peca", (req, res) => {
     }
   );
 });
+app.post("/solicitacoes-peca/:id/arquivar", (req, res) => {
+  const id = req.params.id;
+
+  db.run(
+    `
+    UPDATE solicitacoes_peca
+    SET arquivada = 1
+    WHERE id = ?
+    `,
+    [id],
+    (erro) => {
+      if (erro) {
+        console.log(erro);
+        return res.status(500).send("Erro ao arquivar solicitação");
+      }
+
+      res.send("Solicitação arquivada");
+    }
+  );
+});
 app.get("/solicitacoes-peca/:id/respostas", (req, res) => {
   const solicitacaoId = req.params.id;
 
@@ -1220,19 +1241,24 @@ app.get("/vendedor/:id/solicitacoes-antigas", (req, res) => {
   const vendedorId = req.params.id;
 
   db.all(
-    `
-    SELECT
-      solicitacoes_peca.*,
-      usuarios.nome AS vendedor_nome,
-      notas.numero AS numero_nota,
-      notas.fornecedor AS fornecedor_nota
-    FROM solicitacoes_peca
-    LEFT JOIN usuarios ON usuarios.id = solicitacoes_peca.vendedor_id
-    LEFT JOIN notas ON notas.id = solicitacoes_peca.nota_id
-    WHERE solicitacoes_peca.vendedor_id = ?
-      AND solicitacoes_peca.status IN ('Entregue', 'Cancelada', 'Não encontrada')
-    ORDER BY solicitacoes_peca.id DESC
-    `,
+  `
+  SELECT
+    solicitacoes_peca.*,
+    usuarios.nome AS vendedor_nome,
+    notas.numero AS numero_nota,
+    notas.fornecedor AS fornecedor_nota
+  FROM solicitacoes_peca
+  LEFT JOIN usuarios ON usuarios.id = solicitacoes_peca.vendedor_id
+  LEFT JOIN notas ON notas.id = solicitacoes_peca.nota_id
+  WHERE solicitacoes_peca.vendedor_id = ?
+    AND solicitacoes_peca.status IN (
+      'Entregue',
+      'Cancelada',
+      'Não encontrada'
+    )
+    AND COALESCE(solicitacoes_peca.arquivada, 0) = 0
+  ORDER BY solicitacoes_peca.id DESC
+  `,
     [vendedorId],
     (erro, solicitacoes) => {
       if (erro) {
@@ -1496,6 +1522,25 @@ app.get("/buscar-peca", (req, res) => {
       }
 
       res.json(itens);
+    }
+  );
+});
+app.get("/notas-finalizadas", (req, res) => {
+
+  db.all(
+    `
+    SELECT *
+    FROM notas
+    WHERE status = 'Finalizada'
+    ORDER BY id DESC
+    `,
+    (erro, notas) => {
+
+      if (erro) {
+        return res.status(500).send("Erro");
+      }
+
+      res.json(notas);
     }
   );
 });

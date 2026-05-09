@@ -84,8 +84,12 @@
 
   
 </main>
-
+<script src="/auth.js"></script>
 <script>
+  const usuario = verificarPermissao([
+  "vendedor",
+  "admin"
+]);
 function getUsuarioLogado() {
   return JSON.parse(localStorage.getItem("usuario"));
 }
@@ -224,6 +228,11 @@ async function carregarSolicitacoesAntigas() {
           <strong>Nota:</strong> ${s.numero_nota || "-"}<br>
           <strong>Mensagem:</strong> ${s.mensagem || "-"}
         </p>
+        <br>
+
+      <button onclick="arquivarSolicitacao(${s.id})">
+      Arquivar
+      </button>
       </div>
     `;
   }
@@ -260,6 +269,21 @@ async function carregarNotasRetirada() {
   });
 }
 
+async function arquivarSolicitacao(id) {
+
+  const resposta = await fetch(
+    `/solicitacoes-peca/${id}/arquivar`,
+    {
+      method: "POST"
+    }
+  );
+
+  const texto = await resposta.text();
+
+  alert(texto);
+
+  carregarSolicitacoesAntigas();
+}
 carregarNotasRetirada();
 carregarMinhasSolicitacoes();
 </script>

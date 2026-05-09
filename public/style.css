@@ -384,3 +384,30 @@ tr:hover {
   font-weight: bold;
   cursor: pointer;
 }
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 15px 20px;
+
+  background: #111;
+  color: white;
+}
+
+.navbar-links {
+  display: flex;
+  gap: 15px;
+}
+
+.navbar a {
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.navbar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
