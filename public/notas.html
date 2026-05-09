@@ -63,7 +63,6 @@
       <option>Iury</option>
       <option>Lançamento</option>
       <option>Marcação</option>
-      <option>Finalizada</option>
     </select>
   </div>
 
@@ -125,7 +124,6 @@ function classeStatus(texto) {
   const t = texto.toLowerCase();
 
   if (
-    t.includes("finalizada") ||
     t.includes("conferida sem ocorrência") ||
     t.includes("marcada")
   ) {
