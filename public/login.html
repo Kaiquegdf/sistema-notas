@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <title>Login</title>
   <link rel="stylesheet" href="/style.css">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1e293b">
 </head>
 <body>
 
@@ -69,6 +71,23 @@ async function entrar() {
   }
 }
 </script>
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js")
+    .then(() => {
+      console.log("SW registrado");
+    })
+    .catch((erro) => {
+      console.log("Erro SW:", erro);
+    });
+}
+</script>
+<script>
+window.audioLiberado = false;
 
+document.addEventListener("click", () => {
+  window.audioLiberado = true;
+}, { once: true });
+</script>
 </body>
 </html>

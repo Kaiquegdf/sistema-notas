@@ -4,6 +4,8 @@ const fs = require("fs");
 const xml2js = require("xml2js");
 const sqlite3 = require("sqlite3").verbose();
 const bcrypt = require("bcrypt");
+const http = require("http");
+const { Server } = require("socket.io");
 
 const db = new sqlite3.Database("banco.db");
 
@@ -1004,6 +1006,10 @@ if (quantidadeRestante > 0) {
     `Saldo insuficiente. Faltaram ${quantidadeRestante} peça(s).`
   );
 }
+io.emit("nova_solicitacao", {
+  codigo_loja: codigoLoja,
+  quantidade: quantidadeSolicitada
+});
 
 res.send("Solicitação criada com sucesso");
             }
@@ -1354,7 +1360,7 @@ app.post("/nota/:id/importar-xml", upload.single("xml"), (req, res) => {
 
       const vencimento =
         nfe.cobr?.[0]?.dup?.[0]?.dVenc?.[0] || "";
-
+ 
       const valorBoleto =
         nfe.cobr?.[0]?.dup?.[0]?.vDup?.[0] || "";
 
@@ -1362,6 +1368,27 @@ app.post("/nota/:id/importar-xml", upload.single("xml"), (req, res) => {
         nfe.infAdic?.[0]?.infCpl?.[0] || "";
 
       db.serialize(() => {
+        
+
+        db.run(`
+    CREATE INDEX IF NOT EXISTS idx_codigo_loja
+    ON itens_nota(codigo_loja)
+    `);
+
+    db.run(`
+    CREATE INDEX IF NOT EXISTS idx_status_notas
+    ON notas(status)
+    `);
+
+    db.run(`
+    CREATE INDEX IF NOT EXISTS idx_solicitacao_item
+    ON solicitacoes_peca(item_id)
+    `);
+
+    db.run(`
+    CREATE INDEX IF NOT EXISTS idx_solicitacao_status
+    ON solicitacoes_peca(status)
+    `);
 
         db.run(
           `
@@ -1544,7 +1571,11 @@ app.get("/notas-finalizadas", (req, res) => {
     }
   );
 });
-app.listen(3000, "0.0.0.0", () => {
+const server = http.createServer(app);
+
+const io = new Server(server);
+
+server.listen(3000, "0.0.0.0", () => {
   console.log("Servidor rodando:");
   console.log("http://localhost:3000");
   console.log("http://192.168.15.82:3000");

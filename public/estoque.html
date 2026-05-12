@@ -7,7 +7,11 @@
 </head>
 <body>
 
-  <audio id="somAlerta" src="/sounds/alerta.mp3" preload="auto"></audio>
+ <audio
+  id="somNotificacao"
+  src="/notificacao.mp3"
+  loop>
+</audio>
 
 <div id="notificacaoTela" class="notificacao-tela" style="display: none;">
   <div class="notificacao-card">
@@ -53,6 +57,7 @@
     </table>
   </div>
 </main>
+<script src="/socket.io/socket.io.js"></script>
 <script src="/auth.js"></script>
 <script>
   const usuario = verificarPermissao([
@@ -245,38 +250,58 @@ async function finalizarSolicitacao(id) {
 let ultimoIdVisto = 0;
 let primeiraVerificacao = true;
 
-function tocarSomAlerta() {
-  const som = document.getElementById("somAlerta");
+function tocarSom() {
+  const audio = document.getElementById("somNotificacao");
 
-  if (!som) {
-    console.log("Áudio não encontrado");
-    return;
-  }
+  audio.currentTime = 0;
 
-  som.currentTime = 0;
-
-  som.play().catch((erro) => {
-    console.log("Som bloqueado pelo navegador. Clique na tela uma vez.", erro);
+  audio.play().catch(err => {
+    console.log("Som bloqueado:", err);
   });
 }
 
 function mostrarNotificacao(texto) {
-  const notificacao = document.getElementById("notificacaoTela");
-  const textoNotificacao = document.getElementById("notificacaoTexto");
 
-  if (!notificacao || !textoNotificacao) {
-    console.log("Elemento da notificação não encontrado");
-    return;
-  }
+  const notificacao =
+    document.getElementById("notificacaoTela");
+
+  const textoNotificacao =
+    document.getElementById("notificacaoTexto");
 
   textoNotificacao.innerText = texto;
+
   notificacao.style.display = "flex";
 
-  tocarSomAlerta();
+  tocarSom();
+}
+
+function mostrarPopup(texto) {
+
+  const popup = document.createElement("div");
+
+  popup.innerText = texto;
+
+  popup.style.position = "fixed";
+  popup.style.top = "20px";
+  popup.style.right = "20px";
+  popup.style.background = "#111";
+  popup.style.color = "#fff";
+  popup.style.padding = "15px";
+  popup.style.zIndex = "9999";
+  popup.style.borderRadius = "10px";
+
+  document.body.appendChild(popup);
+
+  setTimeout(() => {
+    popup.remove();
+  }, 5000);
 }
 
 function fecharNotificacao() {
+
   document.getElementById("notificacaoTela").style.display = "none";
+
+  pararSom();
 }
 
 async function verificarNovasSolicitacoes() {
@@ -320,8 +345,28 @@ async function iniciarPainelEstoque() {
   setInterval(verificarNovasSolicitacoes, 10000);
 }
 
-iniciarPainelEstoque();
-</script>
+function pararSom() {
+  const audio = document.getElementById("somNotificacao");
 
+  audio.pause();
+
+  audio.currentTime = 0;
+}
+iniciarPainelEstoque();
+
+</script>
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+
+window.audioLiberado = false;
+
+document.addEventListener("click", () => {
+  window.audioLiberado = true;
+}, { once: true });
+
+
+const socket = io();
+</script>
 </body>
 </html>
