@@ -25,40 +25,65 @@
 
   <div id="conteudo"></div>
 
-  <div class="card">
+  <div class="card danfe-admin-card">
+
+<div class="card">
   <h2>Dados Administrativos</h2>
 
-  <div class="campo">
-  <label>Data de recebimento</label>
+  <div class="grid-admin">
 
-  <input
-    type="date"
-    id="dataRecebimento"
-  />
-</div>
+    <div class="campo">
+      <label>Data de recebimento</label>
+      <input type="date" id="dataRecebimento">
+    </div>
 
-  <div class="grid">
-    <div>
-      <label>CT-e</label><br>
+    <div class="campo">
+      <label>CT-e</label>
       <input id="cte" placeholder="Número do CT-e">
     </div>
 
-    <div>
-      <label>Complemento ICMS/ST manual</label><br>
-      <input id="complemento_manual" placeholder="Ex: valor ST informado manualmente">
+    <div class="campo">
+      <label>Vencimento CT-e</label>
+      <input type="date" id="vencimento_cte">
     </div>
 
-    <div>
-      <label>Observação administrativa</label><br>
-      <input id="observacao_admin" placeholder="Ex: boleto enviado, frete conferido...">
+    <div class="campo">
+      <label>Número da fatura</label>
+      <input id="numero_fatura" placeholder="Número da fatura">
     </div>
+
+    <div class="campo">
+      <label>Complemento ST Frete</label>
+      <input id="complemento_st_frete" placeholder="Complemento ST">
+    </div>
+
+    <div class="campo">
+      <label>Valor frete</label>
+      <input id="valor_frete_admin" placeholder="0,00">
+    </div>
+
+    <div class="campo campo-full">
+      <label>Complemento ICMS/ST manual</label>
+      <input
+        id="complemento_manual"
+        placeholder="Ex: valor ST informado manualmente"
+      >
+    </div>
+
+    <div class="campo campo-full">
+      <label>Observação administrativa</label>
+      <textarea
+        id="observacao_admin"
+        placeholder="Ex: boleto enviado, frete conferido..."
+      ></textarea>
+    </div>
+
   </div>
 
-  <br>
-
-  <button onclick="salvarDadosAdmin()">Salvar dados administrativos</button>
+  <button onclick="salvarDadosAdmin()">
+    Salvar dados administrativos
+  </button>
 </div>
-<br>
 
   <div class="card">
     <h2>Status da Nota</h2>
@@ -452,6 +477,11 @@ async function carregarNota() {
   document.getElementById("markup_nota").value = nota.markup_nota || "1.896";
   document.getElementById("statusUnico").value = nota.status || "Importada";
   document.getElementById("dataRecebimento").value = nota.data_recebimento || "";
+  document.getElementById("vencimento_cte").value = nota.vencimento_cte || "";
+  document.getElementById("numero_fatura").value = nota.numero_fatura || "";
+  document.getElementById("complemento_st_frete").value = nota.complemento_st_frete || "";
+  document.getElementById("valor_frete_admin").value = nota.valor_frete_admin || "";
+
 
   montarResumoAdmin(nota);
   await carregarItens(nota);
@@ -494,25 +524,53 @@ function montarResumoAdmin(nota) {
   const resumoAdminCard = document.getElementById("resumoAdminCard");
 
   const camposResumo = [
-  {
-    titulo: "Data de recebimento",
-    valor: formatarData(nota.data_recebimento)
-  },
 
-  { titulo: "CT-e", valor: nota.cte },
+    {
+      titulo: "Data de recebimento",
+      valor: formatarData(nota.data_recebimento)
+    },
 
-  {
-    titulo: "Complemento manual",
-    valor: nota.complemento_manual
-  },
+    {
+      titulo: "CT-e",
+      valor: nota.cte
+    },
 
-  {
-    titulo: "Observação administrativa",
-    valor: nota.observacao_admin
-  }
-];
+    {
+      titulo: "Vencimento CT-e",
+      valor: formatarData(nota.vencimento_cte)
+    },
 
-  const camposPreenchidos = camposResumo.filter(c => c.valor && String(c.valor).trim() !== "");
+    {
+      titulo: "Número da fatura",
+      valor: nota.numero_fatura
+    },
+
+    {
+      titulo: "Complemento ST Frete",
+      valor: formatarMoeda(nota.complemento_st_frete)
+    },
+
+    {
+      titulo: "Valor frete",
+      valor: formatarMoeda(nota.valor_frete_admin)
+    },
+
+    {
+      titulo: "Complemento manual",
+      valor: nota.complemento_manual
+    },
+
+    {
+      titulo: "Observação administrativa",
+      valor: nota.observacao_admin
+    }
+  ];
+
+  const camposPreenchidos = camposResumo.filter(c => {
+    return c.valor &&
+           c.valor !== "-" &&
+           String(c.valor).trim() !== "";
+  });
 
   if (camposPreenchidos.length === 0) {
     resumoAdminCard.style.display = "none";
@@ -558,31 +616,49 @@ const camposBloqueados = [
 }
 
 async function salvarDadosAdmin() {
-  const cte = document.getElementById("cte").value;
 
-  const complementoManual =
-    document.getElementById("complemento_manual").value;
+  const body = {
 
-  const observacaoAdmin =
-    document.getElementById("observacao_admin").value;
+    cte:
+      document.getElementById("cte").value,
 
-  const dataRecebimento =
-    document.getElementById("dataRecebimento").value;
+    vencimento_cte:
+      document.getElementById("vencimento_cte").value,
 
-  await fetch(`/nota/${notaId}/admin`, {
+    numero_fatura:
+      document.getElementById("numero_fatura").value,
+
+    complemento_st_frete:
+      document.getElementById("complemento_st_frete").value,
+
+    valor_frete_admin:
+      document.getElementById("valor_frete_admin").value,
+
+    complemento_manual:
+      document.getElementById("complemento_manual").value,
+
+    observacao_admin:
+      document.getElementById("observacao_admin").value,
+
+    data_recebimento:
+      document.getElementById("dataRecebimento").value
+
+  };
+
+  const resposta = await fetch(`/nota/${notaId}/admin`, {
     method: "POST",
-
     headers: {
       "Content-Type": "application/json"
     },
-
-    body: JSON.stringify({
-      cte,
-      complemento_manual: complementoManual,
-      observacao_admin: observacaoAdmin,
-      data_recebimento: dataRecebimento
-    })
+    body: JSON.stringify(body)
   });
+
+  const texto = await resposta.text();
+
+  if (!resposta.ok) {
+    alert(texto);
+    return;
+  }
 
   alert("Dados administrativos salvos.");
 }

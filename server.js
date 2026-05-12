@@ -55,7 +55,15 @@ db.serialize(() => {
   db.run(`ALTER TABLE itens_nota ADD COLUMN ordem INTEGER`, () => {});
   db.run(`ALTER TABLE notas ADD COLUMN data_recebimento TEXT`, () => {});
   db.run(`ALTER TABLE solicitacoes_peca ADD COLUMN arquivada INTEGER DEFAULT 0`, () => {});
-  
+  db.run(`ALTER TABLE notas ADD COLUMN valor_icms TEXT`, () => {});
+  db.run(`ALTER TABLE notas ADD COLUMN descontos TEXT`, () => {});
+  db.run(`ALTER TABLE notas ADD COLUMN despesas_ac TEXT`, () => {});
+  db.run(`ALTER TABLE notas ADD COLUMN total_ipi TEXT`, () => {});
+  db.run(`ALTER TABLE notas ADD COLUMN valor_frete_admin TEXT`, () => {});
+  db.run(`ALTER TABLE notas ADD COLUMN vencimento_cte TEXT`, () => {});
+  db.run(`ALTER TABLE notas ADD COLUMN numero_fatura TEXT`, () => {});
+  db.run(`ALTER TABLE notas ADD COLUMN complemento_st_frete TEXT`, () => {});
+ 
   db.run(`
     CREATE TABLE IF NOT EXISTS itens_nota (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -191,7 +199,6 @@ app.post("/importar-xml", upload.single("xml"), (req, res) => {
       const numeroNota = nfe.ide?.[0]?.nNF?.[0] || "";
       const dataEmissao = nfe.ide?.[0]?.dhEmi?.[0] || "";
       const fornecedor = nfe.emit?.[0]?.xNome?.[0] || "";
-
       const frete = nfe.total?.[0]?.ICMSTot?.[0]?.vFrete?.[0] || "";
       const volumes = nfe.transp?.[0]?.vol?.[0]?.qVol?.[0] || "";
       const transportadora = nfe.transp?.[0]?.transporta?.[0]?.xNome?.[0] || "";
@@ -199,6 +206,10 @@ app.post("/importar-xml", upload.single("xml"), (req, res) => {
       const vencimento = nfe.cobr?.[0]?.dup?.[0]?.dVenc?.[0] || "";
       const valorBoleto = nfe.cobr?.[0]?.dup?.[0]?.vDup?.[0] || "";
       const complemento = nfe.infAdic?.[0]?.infCpl?.[0] || "";
+      const valorICMS = nfe.total?.[0]?.ICMSTot?.[0]?.vICMS?.[0] || "";
+      const descontos =  nfe.total?.[0]?.ICMSTot?.[0]?.vDesc?.[0] || "";
+      const despesasAcessorias = nfe.total?.[0]?.ICMSTot?.[0]?.vOutro?.[0] || "";
+      const totalIPI = nfe.total?.[0]?.ICMSTot?.[0]?.vIPI?.[0] || "";
 
       db.run(
         `
@@ -395,23 +406,44 @@ app.post("/nota/:id/admin", (req, res) => {
   const observacaoAdmin = req.body.observacao_admin || "";
   const dataRecebimento = req.body.data_recebimento || "";
 
-  db.run(
-    `
-  UPDATE notas
-  SET
-  cte = ?,
-  complemento_manual = ?,
-  observacao_admin = ?,
-  data_recebimento = ?
+  db.run(`
+  UPDATE notas SET
+
+    cte = ?,
+    vencimento_cte = ?,
+    numero_fatura = ?,
+    complemento_st_frete = ?,
+    valor_frete_admin = ?,
+
+    valor_icms = ?,
+    descontos = ?,
+    despesas_ac = ?,
+    total_ipi = ?,
+
+    complemento_manual = ?,
+    observacao_admin = ?,
+    data_recebimento = ?
+
   WHERE id = ?
-    `,
-    [
-  cte,
-  complementoManual,
-  observacaoAdmin,
-  dataRecebimento,
-  id
-    ],
+`, [
+
+  req.body.cte,
+  req.body.vencimento_cte,
+  req.body.numero_fatura,
+  req.body.complemento_st_frete,
+  req.body.valor_frete_admin,
+
+  req.body.valor_icms,
+  req.body.descontos,
+  req.body.despesas_ac,
+  req.body.total_ipi,
+
+  req.body.complemento_manual,
+  req.body.observacao_admin,
+  req.body.data_recebimento,
+
+  req.params.id
+  ],
     function (erro) {
       if (erro) {
         console.log(erro);

@@ -56,13 +56,6 @@
       </div>
     </div>
 
-    <br>
-
-    <label>Mensagem</label><br>
-    <textarea id="mensagem" placeholder="Ex: Cliente aguardando no balcão..."></textarea>
-
-    <br><br>
-
     <button onclick="criarSolicitacao()">Solicitar peça</button>
   </div>
 
@@ -114,7 +107,6 @@ async function criarSolicitacao() {
 
   const codigoLoja = document.getElementById("codigo_loja").value.trim();
   const quantidade = document.getElementById("quantidade").value;
-  const mensagem = document.getElementById("mensagem").value.trim();
 
   if (!codigoLoja) {
     alert("Informe o código interno da loja.");
@@ -129,8 +121,7 @@ async function criarSolicitacao() {
     body:
       `vendedor_id=${encodeURIComponent(usuario.id)}` +
       `&codigo_loja=${encodeURIComponent(codigoLoja)}` +
-      `&quantidade=${encodeURIComponent(quantidade)}` +
-      `&mensagem=${encodeURIComponent(mensagem)}`
+      `&quantidade=${encodeURIComponent(quantidade)}`  
   });
 
   const texto = await resposta.text();
@@ -139,7 +130,6 @@ async function criarSolicitacao() {
 
   document.getElementById("codigo_loja").value = "";
   document.getElementById("quantidade").value = 1;
-  document.getElementById("mensagem").value = "";
 
   await carregarMinhasSolicitacoes();
 }
@@ -284,6 +274,7 @@ async function arquivarSolicitacao(id) {
 
   carregarSolicitacoesAntigas();
 }
+
 carregarNotasRetirada();
 carregarMinhasSolicitacoes();
 </script>

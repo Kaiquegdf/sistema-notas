@@ -411,3 +411,99 @@ tr:hover {
   align-items: center;
   gap: 10px;
 }
+.danfe-admin-card {
+  padding: 28px;
+}
+
+.secao-header {
+  margin-bottom: 25px;
+}
+
+.secao-header h2 {
+  margin: 0;
+  font-size: 28px;
+  color: #0b0b4d;
+}
+
+.secao-header span {
+  color: #777;
+  font-size: 14px;
+}
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+}
+
+.campo-full {
+  grid-column: span 3;
+}
+
+.campo label {
+  font-size: 13px;
+  margin-bottom: 7px;
+  font-weight: 600;
+  color: #444;
+}
+
+.campo input,
+.campo textarea {
+  border: 1px solid #d7d7d7;
+  border-radius: 10px;
+  padding: 13px;
+  font-size: 15px;
+  background: #fff;
+}
+
+.campo textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.faturas-card {
+  margin-top: 30px;
+  padding-top: 25px;
+  border-top: 1px solid #ececec;
+}
+
+.faturas-card h3 {
+  margin-bottom: 15px;
+  color: #0b0b4d;
+}
+
+.faturas-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+}
+
+.acoes-admin {
+  margin-top: 30px;
+  display: flex;
+  justify-content: flex-end;
+}
+.grid-admin{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:16px;
+}
+
+.campo{
+  display:flex;
+  flex-direction:column;
+}
+
+.campo-full{
+  grid-column:1/-1;
+}
+
+.campo input,
+.campo textarea{
+  width:100%;
+}
