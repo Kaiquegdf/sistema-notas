@@ -51,7 +51,6 @@ db.serialize(() => {
   db.run(`ALTER TABLE itens_nota ADD COLUMN info_adicional TEXT`, () => {});
   db.run(`ALTER TABLE solicitacoes_peca ADD COLUMN conferido TEXT`, () => {});
   db.run(`ALTER TABLE solicitacoes_peca ADD COLUMN finalizado_por TEXT`, () => {});
-<<<<<<< Updated upstream
   db.run(`ALTER TABLE solicitacoes_peca ADD COLUMN finalizado_em TEXT`, () => {});
   db.run(`ALTER TABLE itens_nota ADD COLUMN ordem INTEGER`, () => {});
   db.run(`ALTER TABLE notas ADD COLUMN data_recebimento TEXT`, () => {});
@@ -65,11 +64,6 @@ db.serialize(() => {
   db.run(`ALTER TABLE notas ADD COLUMN numero_fatura TEXT`, () => {});
   db.run(`ALTER TABLE notas ADD COLUMN complemento_st_frete TEXT`, () => {});
  
-=======
-  db.run(`ALTER TABLE solicitacoes_peca ADD COLUMN finalizado_em TEXT`, () => {});""
-  db.run("ALTER TABLE notas ADD COLUMN data_recebimento TEXT", () => {});
-  
->>>>>>> Stashed changes
   db.run(`
     CREATE TABLE IF NOT EXISTS itens_nota (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -173,10 +167,7 @@ criarUsuarioPadrao("kaique", "123", "admin");
 criarUsuarioPadrao("estoque", "123", "estoque");
 criarUsuarioPadrao("italo", "123", "vendedor");
 criarUsuarioPadrao("nathan", "123", "vendedor");
-<<<<<<< Updated upstream
 criarUsuarioPadrao("Emanuel", "123","vendedor");
-=======
->>>>>>> Stashed changes
 
 const app = express();
 
@@ -415,7 +406,6 @@ app.post("/nota/:id/admin", (req, res) => {
   const observacaoAdmin = req.body.observacao_admin || "";
   const dataRecebimento = req.body.data_recebimento || "";
 
-<<<<<<< Updated upstream
   db.run(`
   UPDATE notas SET
 
@@ -454,19 +444,6 @@ app.post("/nota/:id/admin", (req, res) => {
 
   req.params.id
   ],
-=======
-  db.run(
-    `
-    UPDATE notas
-    SET
-      cte = ?,
-      complemento_manual = ?,
-      observacao_admin = ?,
-      data_recebimento = ?
-    WHERE id = ?
-    `,
-    [cte, complementoManual, observacaoAdmin, dataRecebimento, id],
->>>>>>> Stashed changes
     function (erro) {
       if (erro) {
         console.log(erro);
@@ -730,6 +707,7 @@ app.delete("/nota/:id", (req, res) => {
     });
   });
 });
+
 app.get("/nota/:id/solicitacoes-finalizadas", (req, res) => {
   const notaId = req.params.id;
 
@@ -758,6 +736,7 @@ app.get("/nota/:id/solicitacoes-finalizadas", (req, res) => {
     }
   );
 });
+
 app.post("/nota/:id/ocorrencias", (req, res) => {
   const notaId = req.params.id;
   const tipo = req.body.tipo || "";
@@ -794,6 +773,7 @@ app.post("/nota/:id/ocorrencias", (req, res) => {
     }
   );
 });
+
 app.get("/ocorrencias/:id/respostas", (req, res) => {
   const ocorrenciaId = req.params.id;
 
@@ -818,6 +798,7 @@ app.get("/ocorrencias/:id/respostas", (req, res) => {
     }
   );
 });
+
 app.post("/ocorrencias/:id/respostas", (req, res) => {
   const ocorrenciaId = req.params.id;
   const usuarioId = req.body.usuario_id;
@@ -849,6 +830,7 @@ app.post("/ocorrencias/:id/respostas", (req, res) => {
     }
   );
 });
+
 app.post("/ocorrencias/:id/status", (req, res) => {
   const ocorrenciaId = req.params.id;
   const status = req.body.status;
@@ -870,6 +852,7 @@ app.post("/ocorrencias/:id/status", (req, res) => {
     }
   );
 });
+
 app.post("/nota/:id/codigos-loja", (req, res) => {
   const notaId = req.params.id;
   const codigos = req.body.codigos || [];
@@ -912,6 +895,7 @@ app.post("/nota/:id/codigos-loja", (req, res) => {
     }
   );
 });
+
 app.post("/solicitacoes-peca", (req, res) => {
   const vendedorId = req.body.vendedor_id;
   const codigoLoja = String(req.body.codigo_loja || "").trim();
@@ -1071,6 +1055,7 @@ res.send("Solicitação criada com sucesso");
           );
         }
       );
+
 app.get("/solicitacoes-peca", (req, res) => {
   db.all(
     `
@@ -1097,6 +1082,7 @@ app.get("/solicitacoes-peca", (req, res) => {
     }
   );
 });
+
 app.post("/solicitacoes-peca/:id/status", (req, res) => {
   const id = req.params.id;
   const { status, conferido, nome, senha } = req.body;
@@ -1171,6 +1157,7 @@ app.post("/solicitacoes-peca/:id/status", (req, res) => {
     }
   );
 });
+
 app.get("/vendedor/:id/solicitacoes-peca", (req, res) => {
   const vendedorId = req.params.id;
 
@@ -1199,6 +1186,7 @@ app.get("/vendedor/:id/solicitacoes-peca", (req, res) => {
     }
   );
 });
+
 app.post("/solicitacoes-peca/:id/arquivar", (req, res) => {
   const id = req.params.id;
 
@@ -1219,6 +1207,7 @@ app.post("/solicitacoes-peca/:id/arquivar", (req, res) => {
     }
   );
 });
+
 app.get("/solicitacoes-peca/:id/respostas", (req, res) => {
   const solicitacaoId = req.params.id;
 
@@ -1243,6 +1232,7 @@ app.get("/solicitacoes-peca/:id/respostas", (req, res) => {
     }
   );
 });
+
 app.post("/solicitacoes-peca/:id/respostas", (req, res) => {
   const solicitacaoId = req.params.id;
   const usuarioId = req.body.usuario_id;
@@ -1274,6 +1264,7 @@ app.post("/solicitacoes-peca/:id/respostas", (req, res) => {
     }
   );
 });
+
 app.get("/nota/:id/ocorrencias", (req, res) => {
   const notaId = req.params.id;
 
@@ -1298,6 +1289,7 @@ app.get("/nota/:id/ocorrencias", (req, res) => {
     }
   );
 });
+
 app.get("/vendedor/:id/solicitacoes-antigas", (req, res) => {
   const vendedorId = req.params.id;
 
@@ -1331,7 +1323,7 @@ app.get("/vendedor/:id/solicitacoes-antigas", (req, res) => {
     }
   );
 });
-<<<<<<< Updated upstream
+
 app.get("/notas-retirada", (req, res) => {
   db.all(
     `
@@ -1356,6 +1348,7 @@ app.get("/notas-retirada", (req, res) => {
     }
   );
 });
+
 app.post("/nota/manual", (req, res) => {
   const fornecedor = req.body.fornecedor || "";
 
@@ -1385,6 +1378,7 @@ app.post("/nota/manual", (req, res) => {
     }
   );
 });
+
 app.post("/nota/:id/importar-xml", upload.single("xml"), (req, res) => {
   console.log("IMPORTANDO XML NA NOTA", req.params.id);
   const notaId = req.params.id;
@@ -1558,6 +1552,7 @@ app.post("/nota/:id/importar-xml", upload.single("xml"), (req, res) => {
     });
   });
 });
+
 app.get("/buscar-peca", (req, res) => {
   const termo = String(req.query.termo || "").trim();
 
@@ -1608,6 +1603,7 @@ app.get("/buscar-peca", (req, res) => {
     }
   );
 });
+
 app.get("/notas-finalizadas", (req, res) => {
 
   db.all(
@@ -1627,6 +1623,7 @@ app.get("/notas-finalizadas", (req, res) => {
     }
   );
 });
+
 const server = http.createServer(app);
 
 const io = new Server(server);
@@ -1635,22 +1632,4 @@ server.listen(3000, "0.0.0.0", () => {
   console.log("Servidor rodando:");
   console.log("http://localhost:3000");
   console.log("http://192.168.15.82:3000");
-=======
-app.get("/corrigir-data", (req, res) => {
-  db.run(`
-    UPDATE notas
-    SET data_recebimento = '2026-02-23'
-    WHERE id = 20
-  `, (erro) => {
-    if (erro) {
-      console.log(erro);
-      return res.send("Erro");
-    }
-
-    res.send("Data corrigida");
-  });
-});
-app.listen(3000, () => {
-  console.log("Servidor rodando na porta 3000");
->>>>>>> Stashed changes
 });

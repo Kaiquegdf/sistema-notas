@@ -2,13 +2,14 @@ function criarNavbar() {
 
   const usuario = getUsuarioLogado();
 
-  if (!usuario) {
-    return;
-  }
+  if (!usuario) return;
 
   let links = "";
 
-  if (usuario.cargo === "admin") {
+  if (
+    usuario.cargo === "admin" ||
+    usuario.cargo === "administrativo"
+  ) {
 
     links = `
       <a href="/admin.html">Dashboard</a>
@@ -39,16 +40,21 @@ function criarNavbar() {
     "afterbegin",
     `
     <nav class="navbar">
+
       <div class="navbar-links">
         ${links}
       </div>
 
       <div class="navbar-user">
-        ${usuario.nome}
-        <button onclick="logout()">
+
+        <span>${usuario.nome}</span>
+
+        <button class="btn-sair" onclick="logout()">
           Sair
         </button>
+
       </div>
+
     </nav>
     `
   );

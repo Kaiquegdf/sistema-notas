@@ -2,14 +2,14 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Notas</title>
+ <title>Notas Finalizadas</title>
   <link rel="stylesheet" href="/style.css?v=2">
 </head>
 <body>
 
 <main>
   <div class="card">
-    <h2>Notas importadas</h2>
+    <h2>Notas finalizadas</h2>
 
    <div class="top-links">
   <a href="/">Importar nova nota</a>
@@ -146,7 +146,6 @@ function classeStatus(texto) {
 async function carregarNotas() {
   const resposta = await fetch("/notas");
   const notas = await resposta.json();
- 
   const statusFiltro =
   document.getElementById("filtroStatus")?.value || "";
 
@@ -171,9 +170,11 @@ const dataFinal =
       usuario.cargo === "administrativo"
     );
 const notasFiltradas = notas.filter(nota => {
-  if (nota.status === "Finalizada") {
-  return false;
-}
+
+  if (nota.status !== "Finalizada") {
+    return false;
+  }
+
   if (
     statusFiltro &&
     nota.status !== statusFiltro
@@ -238,32 +239,24 @@ notasFiltradas.sort((a, b) => {
 
         <td>${formatarData(nota.data_recebimento)}</td>
 
-       <td>
+   <td>
   <select
     onchange="alterarStatusRapido(${nota.id}, this.value)"
   >
-    <option ${nota.status === "Aguardando mercadoria" ? "selected" : ""}>
-      Aguardando mercadoria
+    <option selected>
+      Finalizada
     </option>
 
-    <option ${nota.status === "Mercadoria recebida" ? "selected" : ""}>
-      Mercadoria recebida
-    </option>
-
-    <option ${nota.status === "Liberada para estoque" ? "selected" : ""}>
-      Liberada para estoque
-    </option>
-
-    <option ${nota.status === "Em conferência" ? "selected" : ""}>
+    <option>
       Em conferência
     </option>
 
-    <option ${nota.status === "Marcação" ? "selected" : ""}>
-      Marcação
+    <option>
+      Conferir ocorrências
     </option>
 
-    <option ${nota.status === "Finalizada" ? "selected" : ""}>
-      Finalizada
+    <option>
+      Liberada para estoque
     </option>
   </select>
 </td>
@@ -295,14 +288,6 @@ notasFiltradas.sort((a, b) => {
     >
       Abrir
     </a>
-
-    <button
-      class="btn-excluir-nota"
-      onclick="excluirNota(${nota.id})"
-    >
-      Excluir
-    </button>
-
   </div>
 </td>
       </tr>

@@ -3,21 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <title>Nota</title>
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/style.css?v=2">
 </head>
 <body>
 
 <header class="top-header">
   <h1>Detalhes da Nota - Jolupe</h1>
 
-  <img 
-    src="https://jolupe.com.br/uploads/27/marca-jolupe.svg" 
-    alt="Logo Jolupe"
-    class="logo-jolupe"
-  >
 </header>
 
 <main>
+  
   <p class="top-links">
     <a href="/notas.html">Voltar para lista de notas</a> |
     <a href="/index.html">Importar nova nota</a>
@@ -27,7 +23,6 @@
 <div class="card">
   <h2>Resumo Administrativo</h2>
 
-<<<<<<< Updated upstream
   <div class="card danfe-admin-card">
 
 <div class="card">
@@ -83,39 +78,6 @@
 
   </div>
 
-=======
-  <div>
-    <label>Data que recebeu</label><br>
-    <input type="date" id="data_recebimento">
-  </div>
-
-  <br>
-
-  <div>
-    <label>CT-e</label><br>
-    <input id="cte" placeholder="Número do CT-e">
-  </div>
-
-  <br>
-
-  <div>
-    <label>Complemento manual</label><br>
-    <input
-      id="complemento_manual"
-      placeholder="Ex: valor ST informado manualmente"
-    >
-  </div>
-
-  <br>
-
-  <div>
-    <label>Observação administrativa</label><br>
-    <textarea id="observacao_admin"></textarea>
-  </div>
-
-  <br>
-
->>>>>>> Stashed changes
   <button onclick="salvarDadosAdmin()">
     Salvar dados administrativos
   </button>
@@ -237,8 +199,7 @@
 </div>
 </main>
 <script src="/auth.js"></script>
-<script src="/auth.js"></script>
-<script src="/navbar.js"></script>
+<script src="/navbar.js?v=2"></script>
 <script>
   criarNavbar();
 const params = new URLSearchParams(window.location.search);
@@ -513,7 +474,6 @@ async function carregarNota() {
   document.getElementById("complemento_manual").value = nota.complemento_manual || "";
   document.getElementById("observacao_admin").value = nota.observacao_admin || "";
   console.log(document.getElementById("data_recebimento"));
-  document.getElementById("data_recebimento").value = nota.data_recebimento || "";
   document.getElementById("markup_nota").value = nota.markup_nota || "1.896";
   document.getElementById("statusUnico").value = nota.status || "Importada";
   document.getElementById("dataRecebimento").value = nota.data_recebimento || "";
@@ -656,13 +616,6 @@ const camposBloqueados = [
 }
 
 async function salvarDadosAdmin() {
-<<<<<<< Updated upstream
-=======
-  const cte = document.getElementById("cte").value;
-  const complementoManual = document.getElementById("complemento_manual").value;
-  const observacaoAdmin = document.getElementById("observacao_admin").value;
-  const dataRecebimento = document.getElementById("data_recebimento").value;
->>>>>>> Stashed changes
 
   const body = {
 
@@ -697,15 +650,7 @@ async function salvarDadosAdmin() {
     headers: {
       "Content-Type": "application/json"
     },
-<<<<<<< Updated upstream
     body: JSON.stringify(body)
-=======
-    body:
-      `cte=${encodeURIComponent(cte)}` +
-      `&complemento_manual=${encodeURIComponent(complementoManual)}` +
-      `&observacao_admin=${encodeURIComponent(observacaoAdmin)}`+
-      `&data_recebimento=${encodeURIComponent(dataRecebimento)}`
->>>>>>> Stashed changes
   });
 
   const texto = await resposta.text();
