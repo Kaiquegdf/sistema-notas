@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Solicitações Finalizadas</title>
+
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/navbar.css">
+
+</head>
+<body>
+<main class="pagina">
+ <div class="card">
+
+  <h2>Pesquisar solicitações</h2>
+
+  <input
+    type="text"
+    id="campoBusca"
+    placeholder="Código, descrição, vendedor ou nota"
+    oninput="carregarSolicitacoes()"
+  >
+
+</div>
+  <div class="card">
+    <h2>Solicitações Finalizadas</h2>
+
+    <div id="listaSolicitacoes"></div>
+  </div>
+ 
+
+</main>
+
+<script src="/auth.js"></script>
+<script src="/navbar.js"></script>
+
+<script>
+
+criarNavbar();
+
+function formatarDataHora(data) {
+
+  if (!data) {
+    return "-";
+  }
+
+  const d = new Date(data);
+
+  if (isNaN(d)) {
+    return data;
+  }
+
+  return d.toLocaleString("pt-BR");
+}
+
+async function carregarSolicitacoes() {
+
+  const busca =
+    document.getElementById("campoBusca").value || "";
+
+  const resposta =
+    await fetch(
+      `/solicitacoes-finalizadas?busca=${encodeURIComponent(busca)}`
+    );
+
+  const solicitacoes =
+    await resposta.json();
+
+  const lista =
+    document.getElementById("listaSolicitacoes");
+
+  lista.innerHTML = "";
+
+  if (solicitacoes.length === 0) {
+
+    lista.innerHTML =
+      "<p>Nenhuma solicitação finalizada.</p>";
+
+    return;
+  }
+
+  solicitacoes.forEach(s => {
+
+    lista.innerHTML += `
+      <div class="ocorrencia-card">
+
+        <span class="ocorrencia-tipo">
+          ${s.status}
+        </span>
+
+        <h3>
+          ${s.codigo_loja || "-"}
+        </h3>
+
+        <p>
+          ${s.descricao || "-"}
+        </p>
+
+        <div class="mensagem-vinculada">
+
+          <strong>Vendedor:</strong>
+          ${s.vendedor_nome || "-"}
+          <br>
+
+          <strong>Quantidade:</strong>
+          ${s.quantidade_solicitada || "-"}
+          <br>
+
+          <strong>Nota:</strong>
+          ${s.numero_nota || "-"}
+          <br>
+
+          <strong>Fornecedor:</strong>
+          ${s.fornecedor_nota || "-"}
+          <br>
+
+          <strong>Solicitada em:</strong>
+          ${formatarDataHora(s.criado_em)}
+          <br>
+
+          <strong>Finalizada em:</strong>
+          ${formatarDataHora(s.finalizado_em)}
+          <br>
+
+          <strong>Finalizado por:</strong>
+          ${s.finalizado_por || "-"}
+          <br>
+
+          <strong>Conferido:</strong>
+          ${s.conferido || "-"}
+          <br><br>
+
+          <button onclick="arquivarSolicitacao(${s.id})">
+            Arquivar
+          </button>
+
+        </div>
+
+      </div>
+    `;
+  });
+}
+
+async function arquivarSolicitacao(id) {
+
+  const confirmar =
+    confirm("Arquivar solicitação?");
+
+  if (!confirmar) {
+    return;
+  }
+
+  await fetch(
+    `/solicitacoes-peca/${id}/arquivar`,
+    {
+      method: "POST"
+    }
+  );
+
+  await carregarSolicitacoes();
+}
+
+carregarSolicitacoes();
+
+</script>
+
+</body>
+</html>

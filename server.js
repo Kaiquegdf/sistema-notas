@@ -63,6 +63,7 @@ db.serialize(() => {
   db.run(`ALTER TABLE notas ADD COLUMN vencimento_cte TEXT`, () => {});
   db.run(`ALTER TABLE notas ADD COLUMN numero_fatura TEXT`, () => {});
   db.run(`ALTER TABLE notas ADD COLUMN complemento_st_frete TEXT`, () => {});
+  db.run(`ALTER TABLE solicitacoes_peca ADD COLUMN arquivada INTEGER DEFAULT 0`, () => {});
  
   db.run(`
     CREATE TABLE IF NOT EXISTS itens_nota (
@@ -1761,6 +1762,87 @@ app.put("/usuarios/:id", async (req, res) => {
       }
 
       res.send("Usuário atualizado");
+    }
+  );
+});
+
+app.get("/solicitacoes-finalizadas", (req, res) => {
+
+  const busca = String(req.query.busca || "").trim();
+
+  db.all(
+    `
+    SELECT
+      solicitacoes_peca.*,
+      usuarios.nome AS vendedor_nome,
+      notas.numero AS numero_nota,
+      notas.fornecedor AS fornecedor_nota
+
+    FROM solicitacoes_peca
+
+    LEFT JOIN usuarios
+      ON usuarios.id = solicitacoes_peca.vendedor_id
+
+    LEFT JOIN notas
+      ON notas.id = solicitacoes_peca.nota_id
+
+    WHERE
+      solicitacoes_peca.status IN (
+        'Entregue',
+        'Não encontrada',
+        'Não achada'
+      )
+
+      AND COALESCE(solicitacoes_peca.arquivada, 0) = 0
+
+      AND (
+        solicitacoes_peca.codigo_loja LIKE ?
+        OR solicitacoes_peca.descricao LIKE ?
+        OR usuarios.nome LIKE ?
+        OR notas.numero LIKE ?
+      )
+
+    ORDER BY solicitacoes_peca.id DESC
+
+    LIMIT 300
+    `,
+    [
+      `%${busca}%`,
+      `%${busca}%`,
+      `%${busca}%`,
+      `%${busca}%`
+    ],
+    (erro, solicitacoes) => {
+
+      if (erro) {
+        console.log(erro);
+        return res.status(500).send("Erro");
+      }
+
+      res.json(solicitacoes);
+    }
+  );
+});
+
+app.post("/solicitacoes-peca/:id/arquivar", (req, res) => {
+
+  const id = req.params.id;
+
+  db.run(
+    `
+    UPDATE solicitacoes_peca
+    SET arquivada = 1
+    WHERE id = ?
+    `,
+    [id],
+    (erro) => {
+
+      if (erro) {
+        console.log(erro);
+        return res.status(500).send("Erro");
+      }
+
+      res.send("Solicitação arquivada");
     }
   );
 });

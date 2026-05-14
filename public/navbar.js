@@ -25,6 +25,8 @@ function criarNavbar() {
       <a href="/admin.html">Dashboard</a>
       <a href="/notas.html">Notas</a>
       <a href="/ocorrencias.html">Ocorrências</a>
+      <a href="/notas-finalizadas.html">Finalizadas</a>
+       <a href="/solicitacoes-finalizadas.html"> Solicitações Finalizadas </a>
     `;
   }
 
