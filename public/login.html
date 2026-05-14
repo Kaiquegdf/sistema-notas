@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Login</title>
-  <link rel="stylesheet" href="/style.css">
+   <link rel="stylesheet" href="/style.css?v=2">
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#1e293b">
 </head>
@@ -76,6 +76,10 @@ if ("serviceWorker" in navigator) {
       console.log("Erro SW:", erro);
     });
 }
+localStorage.setItem(
+  "usuario",
+  JSON.stringify(usuario)
+);
 </script>
 <script>
 window.audioLiberado = false;

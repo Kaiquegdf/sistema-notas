@@ -655,3 +655,7 @@ tr:hover {
 .btn-excluir-nota:hover{
   background:#b91c1c;
 }
+.btn-solicitar
+{
+  margin-top: 20px;
+}

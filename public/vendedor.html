@@ -4,13 +4,9 @@
   <meta charset="UTF-8">
   <title>Painel Vendedor</title>
   <link rel="stylesheet" href="/style.css?v=2">
+  <link rel="stylesheet" href="/navbar.css">
 </head>
 <body>
-
-<header class="top-header">
-    <h1>Painel vendedor</h1>
-
-</header>
 
 <div class="card">
   <h2>Minhas solicitações</h2>
@@ -49,7 +45,7 @@
       </div>
     </div>
 
-    <button onclick="criarSolicitacao()">Solicitar peça</button>
+    <button class="btn-solicitar" onclick="criarSolicitacao()"> Solicitar peça </button>
   </div>
 
   <div class="bloco">
@@ -71,11 +67,11 @@
   
 </main>
 <script src="/auth.js"></script>
+<script src="/navbar.js"></script>
+
 <script>
-  const usuario = verificarPermissao([
-  "vendedor",
-  "admin"
-]);
+  criarNavbar();
+
 function getUsuarioLogado() {
   return JSON.parse(localStorage.getItem("usuario"));
 }

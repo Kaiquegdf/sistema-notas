@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Usuários</title>
+<link rel="stylesheet" href="usuarios.css">
+ <link rel="stylesheet" href="/navbar.css">
+
+
+</head>
+<body>
+
+<div class="conteudo">
+
+  <div class="painel">
+
+    <div class="topo">
+
+      <input id="nome" placeholder="Nome">
+
+      <input id="senha" placeholder="Senha">
+
+      <select id="cargo">
+        <option value="admin">Admin</option>
+        <option value="estoque">Estoque</option>
+        <option value="vendedor">Vendedor</option>
+        <option value="administrativo">Administrativo</option>
+      </select>
+
+      <button onclick="criarUsuario()">
+        Criar usuário
+      </button>
+
+    </div>
+
+  </div>
+  <div
+    id="lista"
+    class="lista-usuarios"
+  ></div>
+
+</div>
+<script src="/auth.js"></script>
+<script src="/navbar.js"></script>
+
+<script>
+  criarNavbar();
+async function carregarUsuarios(){
+
+  const resposta =
+    await fetch("/usuarios");
+
+  const usuarios =
+    await resposta.json();
+
+  const lista =
+    document.getElementById("lista");
+
+  lista.innerHTML = "";
+
+  usuarios.forEach(usuario => {
+
+lista.innerHTML += `
+    
+  <div class="usuario-card">
+
+    <h3>${usuario.nome}</h3>
+
+    <div class="usuario-info">
+      Cargo: ${usuario.cargo}
+    </div>
+
+    <div class="
+      status
+      ${usuario.ativo ? "ativo" : "inativo"}
+    ">
+      ${usuario.ativo ? "ATIVO" : "DESATIVADO"}
+    </div>
+
+   <div class="acoes">
+
+  <button
+    class="btn-editar"
+    onclick="editarUsuario(${usuario.id})"
+  >
+    Editar
+  </button>
+
+<button
+  class="
+    ${usuario.ativo
+      ? "btn-desativar"
+      : "btn-ativar"}
+  "
+
+  onclick="
+    alterarStatus(
+      ${usuario.id},
+      ${usuario.ativo ? 0 : 1}
+    )
+  "
+>
+  ${usuario.ativo ? "Desativar" : "Ativar"}
+</button>
+    </div>
+
+  </div>
+`;;
+  });
+}
+
+async function criarUsuario(){
+
+  const nome =
+    document.getElementById("nome").value;
+
+  const senha =
+    document.getElementById("senha").value;
+
+  const cargo =
+    document.getElementById("cargo").value;
+
+  const resposta = await fetch("/usuarios", {
+    method:"POST",
+
+    headers:{
+      "Content-Type":"application/json"
+    },
+
+    body: JSON.stringify({
+      nome,
+      senha,
+      cargo
+    })
+  });
+
+  const texto =
+    await resposta.text();
+
+  alert(texto);
+
+  carregarUsuarios();
+}
+
+async function alterarStatus(id, ativo){
+
+  await fetch(`/usuarios/${id}/ativo`, {
+
+    method:"POST",
+
+    headers:{
+      "Content-Type":"application/json"
+    },
+
+    body: JSON.stringify({
+      ativo
+    })
+  });
+
+  carregarUsuarios();
+}
+
+async function editarUsuario(id){
+
+  const novoNome =
+    prompt("Novo nome:");
+
+  const novaSenha =
+    prompt("Nova senha:");
+
+  const novoCargo =
+    prompt("Novo cargo:");
+
+  await fetch(`/usuarios/${id}`, {
+    method:"PUT",
+    headers:{
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify({
+      nome:novoNome,
+      senha:novaSenha,
+      cargo:novoCargo
+    })
+  });
+
+  carregarUsuarios();
+}
+carregarUsuarios();
+
+</script>
+
+</body>
+</html>

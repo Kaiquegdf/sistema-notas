@@ -1,0 +1,166 @@
+.topbar{
+
+  position:sticky;
+  top:0;
+  z-index:999;
+
+  height:70px;
+
+  background:#111827;
+
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+
+  padding:0 25px;
+
+  box-shadow:
+    0 4px 15px rgba(0,0,0,0.15);
+}
+
+/* MENU */
+
+.menu-btn{
+
+  background:none;
+  border:none;
+
+  color:white;
+
+  font-size:30px;
+
+  cursor:pointer;
+}
+
+/* LOGO */
+
+.logo{
+
+  position:absolute;
+  left:50%;
+
+  transform:translateX(-50%);
+
+  color:#32e032;
+
+  font-size:28px;
+
+  font-weight:900;
+
+  letter-spacing:3px;
+}
+
+/* USER */
+
+.usuario-topo{
+
+  color:white;
+  font-weight:bold;
+}
+
+/* SIDEBAR */
+
+.sidebar{
+
+  position:fixed;
+
+  top:0;
+  left:-320px;
+
+  width:320px;
+  height:100vh;
+
+  background:#111827;
+
+  z-index:1000;
+
+  transition:0.35s ease;
+
+  box-shadow:
+    5px 0 25px rgba(0,0,0,0.3);
+}
+
+.sidebar.ativo{
+
+  left:0;
+}
+
+/* TOPO SIDEBAR */
+
+.sidebar-topo{
+
+  height:70px;
+
+  display:flex;
+  align-items:center;
+
+  padding-left:25px;
+
+  color:#32e032;
+
+  font-size:24px;
+  font-weight:bold;
+
+  border-bottom:
+    1px solid #1f2937;
+}
+
+/* LINKS */
+
+.sidebar-links{
+
+  display:flex;
+  flex-direction:column;
+
+  padding:20px;
+}
+
+.sidebar-links a{
+
+  color:white;
+
+  text-decoration:none;
+
+  padding:16px;
+
+  border-radius:12px;
+
+  margin-bottom:8px;
+
+  font-weight:bold;
+
+  transition:0.2s;
+}
+
+.sidebar-links a:hover{
+
+  background:#22c55e;
+
+  color:#111827;
+
+  transform:translateX(5px);
+}
+
+/* OVERLAY */
+
+.overlay{
+
+  position:fixed;
+
+  inset:0;
+
+  background:rgba(0,0,0,0.5);
+
+  z-index:998;
+
+  opacity:0;
+  visibility:hidden;
+
+  transition:0.3s;
+}
+
+.overlay.ativo{
+
+  opacity:1;
+  visibility:visible;
+}

@@ -1,0 +1,144 @@
+body{
+  margin:0;
+  background:#e6e6f0;
+  font-family:Arial, Helvetica, sans-serif;
+}
+
+.topo-pagina{
+  background:#111827;
+  padding:25px 30px;
+}
+
+.topo-pagina h1{
+  margin:0;
+  color:#32e032;
+  font-size:32px;
+}
+
+.conteudo{
+  padding:30px;
+}
+
+.painel{
+  background:white;
+  border-radius:22px;
+  padding:25px;
+  margin-bottom:25px;
+  box-shadow:0 0 15px rgba(0,0,0,0.08);
+}
+
+.topo{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+input::placeholder{
+  color:black;
+}
+input,
+select{
+  background:#e6e6f0;
+  border:1px solid #2d3442;
+  color:black;
+  padding:12px;
+  border-radius:10px;
+  outline:none;
+  min-width:180px;
+  font-size:14px;
+}
+
+input:focus,
+select:focus{
+  border-color:#4f8cff;
+}
+
+button{
+  background:#22c55e;
+  border:none;
+  color:white;
+  padding:12px 18px;
+  border-radius:10px;
+  cursor:pointer;
+  font-weight:bold;
+  transition:0.2s;
+}
+
+button:hover{
+  opacity:0.9;
+}
+
+.lista-usuarios{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+  gap:18px;
+}
+
+.usuario-card{
+  background:white;
+  border-radius:22px;
+  padding:22px;
+  box-shadow:0 0 15px rgba(0,0,0,0.08);
+  border:1px solid #dcdfea;
+}
+
+.usuario-card h3{
+  margin:0 0 10px 0;
+  font-size:22px;
+}
+
+.usuario-info{
+  color:#6b7280;
+  margin-bottom:10px;
+}
+
+.status{
+  display:inline-block;
+  padding:6px 14px;
+  border-radius:999px;
+  font-size:13px;
+  font-weight:bold;
+  margin-top:10px;
+}
+
+.status.ativo{
+  background:#14532d;
+  color:#4ade80;
+}
+
+.status.inativo{
+  background:#7f1d1d;
+  color:#fca5a5;
+}
+
+.acoes{
+  margin-top:20px;
+}
+
+.btn-desativar{
+  background:#ef4444;
+}
+
+.btn-ativar{
+  background:#22c55e;
+}
+
+@media (max-width:700px){
+
+  .conteudo{
+    padding:15px;
+  }
+
+  .topo{
+    flex-direction:column;
+  }
+
+  input,
+  select,
+  button{
+    width:100%;
+  }
+
+}
+.btn-editar{
+  background:#2563eb;
+}

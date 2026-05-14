@@ -18,17 +18,27 @@ function verificarLogin() {
 }
 
 function verificarPermissao(cargosPermitidos = []) {
+
   const usuario = verificarLogin();
 
   if (!usuario) {
     return null;
   }
 
+  const cargo =
+    usuario.cargo.toLowerCase().trim();
+
+  const permitidos =
+    cargosPermitidos.map(c =>
+      c.toLowerCase().trim()
+    );
+
   if (
-    cargosPermitidos.length > 0 &&
-    !cargosPermitidos.includes(usuario.cargo)
+    permitidos.length > 0 &&
+    !permitidos.includes(cargo)
   ) {
-    alert("Você não tem permissão para acessar esta página.");
+
+    alert("Sem permissão");
 
     redirecionarLogin();
 
@@ -41,4 +51,12 @@ function verificarPermissao(cargosPermitidos = []) {
 function logout() {
   localStorage.removeItem("usuario");
   redirecionarLogin();
+}
+const usuario =
+  JSON.parse(localStorage.getItem("usuario"));
+
+if(!usuario){
+
+  window.location.href =
+    "/login.html";
 }

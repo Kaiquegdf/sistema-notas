@@ -367,6 +367,63 @@ app.get("/usuarios", (req, res) => {
   );
 });
 
+app.post("/usuarios", async (req, res) => {
+  const { nome, senha, cargo } = req.body;
+
+  if (!nome || !senha || !cargo) {
+    return res.status(400).send("Preencha tudo");
+  }
+
+  const senhaHash = await bcrypt.hash(senha, 10);
+
+  db.run(
+    `
+    INSERT INTO usuarios (
+      nome,
+      senha_hash,
+      cargo,
+      ativo,
+      criado_em
+    )
+    VALUES (?, ?, ?, 1, ?)
+    `,
+    [
+      nome,
+      senhaHash,
+      cargo,
+      new Date().toISOString()
+    ],
+    (erro) => {
+      if (erro) {
+        console.log(erro);
+        return res.status(500).send("Erro ao criar usuário");
+      }
+
+      res.send("Usuário criado");
+    }
+  );
+});
+
+app.post("/usuarios/:id/desativar", (req, res) => {
+  const id = req.params.id;
+
+  db.run(
+    `
+    UPDATE usuarios
+    SET ativo = 0
+    WHERE id = ?
+    `,
+    [id],
+    (erro) => {
+      if (erro) {
+        return res.status(500).send("Erro");
+      }
+
+      res.send("Usuário desativado");
+    }
+  );
+});
+
 app.post("/login", (req, res) => {
   const nome = req.body.nome;
   const senha = req.body.senha;
@@ -1112,24 +1169,14 @@ app.post("/solicitacoes-peca/:id/status", (req, res) => {
         return res.status(401).send("Usuário não encontrado");
       }
 
-      const senhaBanco = usuario.senha || usuario.senha_hash || usuario.password;
+      const senhaCorreta = await bcrypt.compare(
+    senha,
+    usuario.senha_hash
+  );
 
-      if (!senhaBanco) {
-        return res.status(400).send("Erro: senha do usuário não encontrada no banco.");
-      }
-
-      let senhaOk = false;
-
-      if (String(senhaBanco).startsWith("$2")) {
-        senhaOk = await bcrypt.compare(senha, senhaBanco);
-      } else {
-        senhaOk = senha === senhaBanco;
-      }
-
-      if (!senhaOk) {
+      if (!senhaCorreta) {
         return res.status(401).send("Senha incorreta");
       }
-
       if (usuario.cargo !== "estoque" && usuario.cargo !== "admin") {
         return res.status(403).send("Usuário sem permissão.");
       }
@@ -1620,6 +1667,100 @@ app.get("/notas-finalizadas", (req, res) => {
       }
 
       res.json(notas);
+    }
+  );
+});
+
+app.post("/usuarios", async (req, res) => {
+
+  const { nome, senha, cargo } = req.body;
+
+  if (!nome || !senha || !cargo) {
+    return res.status(400).send("Preencha tudo");
+  }
+
+  const senhaHash = await bcrypt.hash(senha, 10);
+
+  db.run(
+    `
+    INSERT INTO usuarios (
+      nome,
+      senha_hash,
+      cargo,
+      ativo,
+      criado_em
+    )
+    VALUES (?, ?, ?, 1, ?)
+    `,
+    [
+      nome,
+      senhaHash,
+      cargo,
+      new Date().toISOString()
+    ],
+    (erro) => {
+
+      if (erro) {
+        console.log(erro);
+        return res.status(500).send("Erro ao criar usuário");
+      }
+
+      res.send("Usuário criado");
+    }
+  );
+});
+
+app.post("/usuarios/:id/ativo", (req, res) => {
+
+  const id = req.params.id;
+  const ativo = req.body.ativo;
+
+  db.run(
+    `
+    UPDATE usuarios
+    SET ativo = ?
+    WHERE id = ?
+    `,
+    [ativo, id],
+    (erro) => {
+
+      if (erro) {
+        console.log(erro);
+        return res.status(500).send("Erro");
+      }
+
+      res.send("Usuário atualizado");
+    }
+  );
+});
+
+app.put("/usuarios/:id", async (req, res) => {
+
+  const id = req.params.id;
+
+  const { nome, senha, cargo } = req.body;
+
+  const senhaHash =
+    await bcrypt.hash(senha, 10);
+
+  db.run(
+    `
+    UPDATE usuarios
+    SET
+      nome = ?,
+      senha_hash = ?,
+      cargo = ?
+    WHERE id = ?
+    `,
+    [nome, senhaHash, cargo, id],
+    (erro) => {
+
+      if (erro) {
+        console.log(erro);
+        return res.status(500).send("Erro");
+      }
+
+      res.send("Usuário atualizado");
     }
   );
 });

@@ -4,13 +4,9 @@
   <meta charset="UTF-8">
   <title>Nota</title>
   <link rel="stylesheet" href="/style.css?v=2">
+  <link rel="stylesheet" href="/navbar.css">
 </head>
 <body>
-
-<header class="top-header">
-  <h1>Detalhes da Nota - Jolupe</h1>
-
-</header>
 
 <main>
   
@@ -201,6 +197,11 @@
 <script src="/auth.js"></script>
 <script src="/navbar.js?v=2"></script>
 <script>
+verificarPermissao([
+  "admin",
+  "administrativo"
+]);
+
   criarNavbar();
 const params = new URLSearchParams(window.location.search);
 const notaId = params.get("id");
@@ -780,6 +781,7 @@ async function carregarSolicitacoesNota() {
     </div>
   `).join("");
 }
+
 
 carregarNota();
 </script>
