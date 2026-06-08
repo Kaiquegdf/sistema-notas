@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Ocorrências</title>
+
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/navbar.css">
+</head>
+<body>
+
+<main class="pagina">
+
+  <div class="card">
+
+    <h2>Ocorrências das notas</h2>
+
+    <div class="filtros-notas">
+
+      <div>
+        <label>Pesquisar</label><br>
+
+        <input
+          type="text"
+          id="campoBusca"
+          placeholder="Nota, fornecedor ou ocorrência"
+          oninput="carregarOcorrencias()"
+        >
+      </div>
+
+      <div>
+        <label>Status</label><br>
+
+        <select
+          id="filtroStatus"
+          onchange="carregarOcorrencias()"
+        >
+          <option value="">Todos</option>
+
+          <option>Conferir ocorrências</option>
+          <option>Em conferência</option>
+        </select>
+      </div>
+
+    </div>
+          <div>
+  <label>Período</label><br>
+
+  <select
+    id="filtroDias"
+    onchange="carregarOcorrencias()"
+  >
+    <option value="1">Hoje</option>
+    <option value="3" selected>3 dias</option>
+    <option value="7">7 dias</option>
+    <option value="30">30 dias</option>
+  </select>
+</div>
+
+    <br>
+
+    <div id="listaOcorrencias"></div>
+
+  </div>
+
+</main>
+
+<script src="/auth.js"></script>
+<script src="/navbar.js"></script>
+
+<script>
+
+criarNavbar();
+const usuarioLogado =
+  JSON.parse(
+    localStorage.getItem("usuario")
+  );
+
+function formatarDataHora(data){
+
+  if(!data){
+    return "-";
+  }
+
+  return new Date(data)
+    .toLocaleString("pt-BR");
+}
+
+async function carregarOcorrencias(){
+
+  const respostaNotas =
+    await fetch("/notas");
+
+  const notas =
+    await respostaNotas.json();
+
+  const busca =
+    document.getElementById("campoBusca")
+    .value
+    .toLowerCase();
+
+  const statusFiltro =
+    document.getElementById("filtroStatus")
+    .value;
+
+  const filtroDias =
+    Number(
+      document.getElementById("filtroDias").value
+    );
+
+  const lista =
+    document.getElementById("listaOcorrencias");
+
+  lista.innerHTML = "";
+
+  let todasOcorrencias = [];
+
+  for(const nota of notas){
+
+    const respostaOcorrencias =
+      await fetch(`/nota/${nota.id}/ocorrencias`);
+
+    const ocorrencias =
+      await respostaOcorrencias.json();
+
+for(const oc of ocorrencias){
+
+  const respostaRespostas =
+    await fetch(
+      `/ocorrencias/${oc.id}/respostas`
+    );
+
+  const respostas =
+    await respostaRespostas.json();
+
+  todasOcorrencias.push({
+    nota,
+    ocorrencia: oc,
+    respostas
+  });
+}
+  }
+
+const filtradas =
+  todasOcorrencias.filter(item => {
+
+    const nota = item.nota;
+    const oc = item.ocorrencia;
+    const respostas = item.respostas || [];
+
+    if(
+      statusFiltro &&
+      nota.status !== statusFiltro
+    ){
+      return false;
+    }
+
+    const dataOcorrencia =
+      new Date(oc.criado_em);
+
+    const agora =
+      new Date();
+
+    const diferencaDias =
+      (agora - dataOcorrencia)
+      / (1000 * 60 * 60 * 24);
+
+    if(diferencaDias > filtroDias){
+      return false;
+    }
+
+    const texto =
+      `
+        ${nota.numero}
+        ${nota.fornecedor}
+        ${oc.titulo}
+        ${oc.mensagem}
+      `.toLowerCase();
+
+    return texto.includes(busca);
+  });
+
+  if(filtradas.length === 0){
+
+    lista.innerHTML =
+      "<p>Nenhuma ocorrência encontrada.</p>";
+
+    return;
+  }
+
+      
+filtradas.forEach(item => {
+
+  const nota = item.nota;
+  const oc = item.ocorrencia;
+    const respostas = item.respostas || [];
+
+  lista.innerHTML += `
+    <div class="ocorrencia-card">
+
+      <div class="topo-ocorrencia">
+
+        <div>
+
+          <span class="ocorrencia-tipo">
+            ${nota.status || "-"}
+          </span>
+
+          <h3>
+            Nota ${nota.numero || "-"}
+          </h3>
+
+          <p>
+            ${nota.fornecedor || "-"}
+          </p>
+
+        </div>
+
+        <a
+          class="btn-abrir-nota"
+          href="/nota.html?id=${nota.id}"
+        >
+          Abrir nota
+        </a>
+
+      </div>
+
+      <div class="mensagem-vinculada">
+
+        <strong>Título:</strong>
+
+        <p>
+          ${oc.titulo || "-"}
+        </p>
+
+        <br>
+
+        <strong>Mensagem:</strong>
+
+        <p>
+          ${oc.mensagem || "-"}
+        </p>
+
+        <br>
+
+        <strong>Status:</strong>
+        ${oc.status || "-"}
+
+        <br><br>
+
+        <strong>Criado por:</strong>
+        ${oc.criado_por_nome || "-"}
+
+        <br><br>
+
+       <strong>Data:</strong>
+${formatarDataHora(oc.criado_em)}
+
+<br><br>
+
+<strong>Respostas:</strong>
+
+<div class="lista-respostas">
+
+  ${
+    respostas.length === 0
+    ? "<p>Nenhuma resposta.</p>"
+    : respostas.map(r => `
+        <div class="resposta-item">
+
+          <strong>
+            ${r.usuario_nome || "-"}
+          </strong>
+
+          <br>
+
+          ${r.mensagem || "-"}
+
+          <br><br>
+
+          <small>
+            ${formatarDataHora(r.criado_em)}
+          </small>
+
+        </div>
+      `).join("")
+  }
+
+</div>
+
+</div>
+
+<br>
+
+      <textarea
+        id="resposta-${oc.id}"
+        placeholder="Responder ocorrência..."
+      ></textarea>
+
+      <br><br>
+
+      <button
+        onclick="responderOcorrencia(${oc.id})"
+      >
+        Salvar resposta
+      </button>
+
+      ${usuarioLogado.cargo === "admin" ? `
+      <button onclick="excluirOcorrencia(${oc.id})">
+        Excluir ocorrência
+      </button>
+      ` : ""}
+
+    </div>
+  `;
+});
+}
+
+async function responderOcorrencia(id){
+
+  const resposta =
+    document.getElementById(
+      `resposta-${id}`
+    ).value;
+
+  if(!resposta.trim()){
+
+    alert("Digite uma resposta.");
+
+    return;
+  }
+
+  const usuario =
+    JSON.parse(
+      localStorage.getItem("usuario")
+    );
+
+    
+
+  const req =
+    await fetch(
+      `/ocorrencias/${id}/respostas`,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json"
+        },
+
+        body: JSON.stringify({
+          usuario_id: usuario.id,
+          mensagem: resposta
+        })
+      }
+    );
+
+  const texto =
+    await req.text();
+
+  if(!req.ok){
+
+    alert(texto);
+
+    return;
+  }
+
+  alert("Resposta salva.");
+
+  carregarOcorrencias();
+}
+
+async function excluirOcorrencia(id){
+
+  const nome =
+    prompt("Usuário admin:");
+
+  if(!nome){
+    return;
+  }
+
+  const senha =
+    prompt("Senha:");
+
+  if(!senha){
+    return;
+  }
+
+  const req =
+    await fetch(
+      `/ocorrencias/${id}/excluir`,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json"
+        },
+
+        body: JSON.stringify({
+          nome,
+          senha
+        })
+      }
+    );
+
+  const texto =
+    await req.text();
+
+  alert(texto);
+
+  if(req.ok){
+    carregarOcorrencias();
+  }
+}
+
+carregarOcorrencias();
+
+</script>
+
+</body>
+</html>

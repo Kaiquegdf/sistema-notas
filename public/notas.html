@@ -53,18 +53,19 @@
   <div>
     <label>Status</label><br>
 
-    <select id="filtroStatus" onchange="carregarNotas()">
-      <option value="">Todos</option>
+<select id="filtroStatus" onchange="carregarNotas()">
+  <option value="">Todos</option>
 
-      <option>Aguardando mercadoria</option>
-      <option>Mercadoria recebida</option>
-      <option>Liberada para estoque</option>
-      <option>Em conferência</option>
-      <option>Conferir ocorrências</option>
-      <option>Iury</option>
-      <option>Lançamento</option>
-      <option>Marcação</option>
-    </select>
+  <option>Aguardando mercadoria</option>
+  <option>Mercadoria recebida</option>
+  <option>Liberada para estoque</option>
+  <option>Em conferência</option>
+  <option>Conferir ocorrências</option>
+  <option>Iury</option>
+  <option>Lançamento</option>
+  <option>Marcação</option>
+  <option>Finalizada</option>
+</select>
   </div>
 
   <div>
@@ -163,16 +164,11 @@ const dataFinal =
   const pesquisa =
   document.getElementById("pesquisaNota")?.value || "";
 
-  const usuario = JSON.parse(localStorage.getItem("usuario"));
-
-  const podeExcluir =
-    usuario &&
-    (
-      usuario.cargo === "admin" ||
-      usuario.cargo === "administrativo"
-    );
 const notasFiltradas = notas.filter(nota => {
-  if (nota.status === "Finalizada") {
+ if (
+  nota.status === "Finalizada" &&
+  statusFiltro !== "Finalizada"
+) {
   return false;
 }
   if (
@@ -257,6 +253,17 @@ notasFiltradas.sort((a, b) => {
 
     <option ${nota.status === "Em conferência" ? "selected" : ""}>
       Em conferência
+    </option>
+    <option ${nota.status === "Conferir ocorrências" ? "selected" : ""}>
+      Conferir ocorrências
+    </option>
+
+    <option ${nota.status === "Iury" ? "selected" : ""}>
+      Iury
+    </option>
+
+    <option ${nota.status === "Lançamento" ? "selected" : ""}>
+      Lançamento
     </option>
 
     <option ${nota.status === "Marcação" ? "selected" : ""}>
@@ -426,12 +433,15 @@ async function alterarStatusRapido(id, status) {
 
 }
 
-if(
-  usuario.cargo !== "admin" &&
-  usuario.cargo !== "administrativo"
-){
-  window.location.href =
-    "/login.html";
+
+if (
+  !usuario ||
+  (
+    usuario.cargo !== "admin" &&
+    usuario.cargo !== "administrativo"
+  )
+) {
+  window.location.href = "/login.html";
 }
 
 carregarNotas();

@@ -63,7 +63,7 @@ db.serialize(() => {
   db.run(`ALTER TABLE notas ADD COLUMN vencimento_cte TEXT`, () => {});
   db.run(`ALTER TABLE notas ADD COLUMN numero_fatura TEXT`, () => {});
   db.run(`ALTER TABLE notas ADD COLUMN complemento_st_frete TEXT`, () => {});
-  db.run(`ALTER TABLE solicitacoes_peca ADD COLUMN arquivada INTEGER DEFAULT 0`, () => {});
+  db.run('ALTER TABLE notas ADD COLUMN ocorrencia TEXT', () => {});
  
   db.run(`
     CREATE TABLE IF NOT EXISTS itens_nota (
@@ -139,6 +139,20 @@ db.serialize(() => {
 `);
 
 db.run(`
+CREATE TABLE IF NOT EXISTS relatorio_orcamentos (
+
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+  numero_orcamento TEXT,
+  codigo_produto TEXT,
+  descricao TEXT,
+  quantidade INTEGER,
+
+  importado_em TEXT
+)
+`);
+
+db.run(`
   CREATE TABLE IF NOT EXISTS respostas_solicitacao_peca (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     solicitacao_id INTEGER,
@@ -164,7 +178,6 @@ async function criarUsuarioPadrao(nome, senha, cargo) {
 }
 
 criarUsuarioPadrao("admin", "123", "admin");
-criarUsuarioPadrao("kaique", "123", "admin");
 criarUsuarioPadrao("estoque", "123", "estoque");
 criarUsuarioPadrao("italo", "123", "vendedor");
 criarUsuarioPadrao("nathan", "123", "vendedor");
@@ -368,42 +381,6 @@ app.get("/usuarios", (req, res) => {
   );
 });
 
-app.post("/usuarios", async (req, res) => {
-  const { nome, senha, cargo } = req.body;
-
-  if (!nome || !senha || !cargo) {
-    return res.status(400).send("Preencha tudo");
-  }
-
-  const senhaHash = await bcrypt.hash(senha, 10);
-
-  db.run(
-    `
-    INSERT INTO usuarios (
-      nome,
-      senha_hash,
-      cargo,
-      ativo,
-      criado_em
-    )
-    VALUES (?, ?, ?, 1, ?)
-    `,
-    [
-      nome,
-      senhaHash,
-      cargo,
-      new Date().toISOString()
-    ],
-    (erro) => {
-      if (erro) {
-        console.log(erro);
-        return res.status(500).send("Erro ao criar usuário");
-      }
-
-      res.send("Usuário criado");
-    }
-  );
-});
 
 app.post("/usuarios/:id/desativar", (req, res) => {
   const id = req.params.id;
@@ -1542,7 +1519,6 @@ app.post("/nota/:id/importar-xml", upload.single("xml"), (req, res) => {
           if (infoAdicional) {
             const partesInfo =
               infoAdicional.split("|").map(p => p.trim());
-
             codigoPeca = partesInfo[0] || "";
             marcaPeca = partesInfo[1] || "";
           }
@@ -1824,28 +1800,117 @@ app.get("/solicitacoes-finalizadas", (req, res) => {
   );
 });
 
-app.post("/solicitacoes-peca/:id/arquivar", (req, res) => {
+app.get("/ocorrencias", (req, res) => {
 
-  const id = req.params.id;
+  const dias =
+    Number(req.query.dias || 3);
 
-  db.run(
+  db.all(
     `
-    UPDATE solicitacoes_peca
-    SET arquivada = 1
-    WHERE id = ?
+    SELECT
+      ocorrencias.*,
+
+      notas.numero,
+      notas.fornecedor,
+      notas.status AS status_nota,
+
+      usuarios.nome AS criado_por_nome
+
+    FROM ocorrencias
+
+    LEFT JOIN notas
+      ON notas.id = ocorrencias.nota_id
+
+    LEFT JOIN usuarios
+      ON usuarios.id = ocorrencias.criado_por
+
+    WHERE
+      COALESCE(ocorrencias.excluida, 0) = 0
+
+      AND datetime(ocorrencias.criado_em)
+      >= datetime('now', ?)
+
+    ORDER BY ocorrencias.id DESC
     `,
-    [id],
-    (erro) => {
+    [`-${dias} days`],
+    (erro, ocorrencias) => {
 
       if (erro) {
         console.log(erro);
         return res.status(500).send("Erro");
       }
 
-      res.send("Solicitação arquivada");
+      res.json(ocorrencias);
     }
   );
 });
+
+app.post("/ocorrencias/:id/excluir", async (req, res) => {
+
+  const id = req.params.id;
+
+  const { nome, senha } = req.body;
+
+  if(!nome || !senha){
+    return res.status(400).send("Informe usuário e senha");
+  }
+
+  db.get(
+    "SELECT * FROM usuarios WHERE nome = ?",
+    [nome],
+    async (erro, usuario) => {
+
+      if(erro){
+        console.log(erro);
+        return res.status(500).send("Erro");
+      }
+
+      if(!usuario){
+        return res.status(401).send("Usuário não encontrado");
+      }
+
+      const senhaCorreta =
+        await bcrypt.compare(
+          senha,
+          usuario.senha_hash
+        );
+
+      if(!senhaCorreta){
+        return res.status(401).send("Senha incorreta");
+      }
+
+      if(usuario.cargo !== "admin"){
+        return res.status(403).send("Somente admin");
+      }
+
+      db.serialize(() => {
+
+        db.run(
+          "DELETE FROM respostas_ocorrencia WHERE ocorrencia_id = ?",
+          [id]
+        );
+
+        db.run(
+          "DELETE FROM ocorrencias WHERE id = ?",
+          [id],
+          function(erro){
+
+            if(erro){
+              console.log(erro);
+              return res.status(500).send("Erro ao excluir");
+            }
+
+            res.send("Ocorrência excluída");
+          }
+        );
+
+      });
+
+    }
+  );
+
+});
+
 
 const server = http.createServer(app);
 

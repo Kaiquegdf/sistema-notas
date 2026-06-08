@@ -162,7 +162,6 @@
       <label>Tipo</label><br>
       <select id="ocorrencia_tipo">
         <option>Preço</option>
-        <option>Falta de peça</option>
         <option>Pedido divergente</option>
         <option>Boleto/Frete</option>
         <option>Devolução</option>
@@ -197,6 +196,7 @@
 <script src="/auth.js"></script>
 <script src="/navbar.js?v=2"></script>
 <script>
+
 verificarPermissao([
   "admin",
   "administrativo"
@@ -782,8 +782,8 @@ async function carregarSolicitacoesNota() {
   `).join("");
 }
 
-
 carregarNota();
+
 </script>
 
 </body>
